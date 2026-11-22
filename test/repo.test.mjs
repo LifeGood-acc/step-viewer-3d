@@ -57,8 +57,8 @@ test('no minified code without a recorded source', () => {
 test('binary samples are generated, not committed: only images and WebAssembly are binary files in the repository', () => {
   const files = tracked()
   if (!files) return // not a git work tree: nothing to check
-  // the one allowed archive: the converter's WebAssembly, gzip-compressed (dev/vendor.json records its content's checksum)
-  const binary = files.filter((f) => /\.(glb|gltf|3mf|zip|gz|tgz|tar|usdz|stl|ply|obj|bin|jar|so|dylib|exe)$/i.test(f) && f !== 'editor/vendor/occt/occt-import-js.wasm.gz')
+  // no archives at all (the catalog rejects .gz, .zip, .whl, ...); the converter's WebAssembly is a plain .wasm (dev/vendor.json records its checksum)
+  const binary = files.filter((f) => /\.(glb|gltf|3mf|zip|gz|tgz|tar|whl|usdz|stl|ply|obj|bin|jar|so|dylib|exe|icns|o|a|hwp)$/i.test(f))
   assert.deepEqual(binary, [], 'generate sample models with dev/make_samples.py instead of committing them')
   assert.ok(!files.some((f) => f.startsWith('samples/') && !/\.(step|stepview)$/.test(f)), 'samples/ is generated (ignored by git)')
 })

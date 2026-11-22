@@ -3,7 +3,7 @@
   "manifestVersion": 2,
   "id": "step-viewer-3d",
   "name": "STEP Viewer 3D",
-  "version": "0.25.1",
+  "version": "0.25.2",
   "description": "View STEP CAD files (.step, .stp) in Orca: assemblies and parts as a list with color and visibility, wireframe, mesh quality, size and unit from the file. The OpenCascade converter runs in a background worker, fully offline, with no permissions. Export a copy as GLB, STL, OBJ, PLY, 3MF, PNG or a turntable video, compress a model under a size, and transform, decimate or check it as a copy.",
   "license": "MIT AND LGPL-2.1-only",
   "icon": "assets/icon.png",

@@ -39,13 +39,12 @@
       "integrity": "sha512-RFfYQXYFX5C1mB1Aywm0ShcUKzXOr/VzTnlzhBSDJOR6YCAPt1HYCzeXWg1vwwjn/cUxwqRNhhtf1dlewoZYCQ==",
       "source": "https://github.com/kovacsv/occt-import-js/tree/0.0.23",
       "npm": "https://www.npmjs.com/package/occt-import-js/v/0.0.23",
-      "note": "The .wasm is the unmodified npm file, shipped gzip-compressed (editor/vendor/occt/occt-import-js.wasm.gz; the recorded SHA-256 is that of the UNCOMPRESSED npm file, which dev/vendor.mjs checks after unpacking). The original glue file is kept in licenses/original; editor/vendor/occt/occt-import-js.js is rebuilt from it by dev/patch-occt.mjs (two Function-constructor calls replaced; it has no \"from\").",
+      "note": "The .wasm is the unmodified npm file, shipped as a plain file (editor/vendor/occt/occt-import-js.wasm; the Orca catalog rejects archives such as .gz). The original glue file is kept in licenses/original; editor/vendor/occt/occt-import-js.js is rebuilt from it by dev/patch-occt.mjs (two Function-constructor calls replaced; it has no \"from\").",
       "files": [
         {
           "from": "dist/occt-import-js.wasm",
-          "to": "editor/vendor/occt/occt-import-js.wasm.gz",
-          "sha256": "33391fc9d94ea5c869a6718488bf0a9a464222bac9bdc764dfe1690cef281952",
-          "gzip": true
+          "to": "editor/vendor/occt/occt-import-js.wasm",
+          "sha256": "33391fc9d94ea5c869a6718488bf0a9a464222bac9bdc764dfe1690cef281952"
         },
         {
           "from": "dist/occt-import-js.js",

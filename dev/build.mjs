@@ -9,7 +9,6 @@
 //   node dev/build.mjs --check    builds into a temporary folder and compares with editor/vendor (exit 1 on any difference)
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { gunzipSync, gzipSync } from 'node:zlib'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -28,7 +27,7 @@ export function buildFiles() {
     for (const f of pkg.files.filter((x) => x.from)) {
       const data = readFileSync(join(base, f.from))
       if (sha(data) !== f.sha256) throw new Error(`${pkg.name}@${pkg.version}: ${f.from} differs from the recorded SHA-256 (${f.to})`)
-      out.push({ to: f.to, data: f.gzip ? gzipSync(data, { level: 9 }) : data })
+      out.push({ to: f.to, data })
     }
   }
   return out
@@ -47,11 +46,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
         mkdirSync(dirname(dst), { recursive: true })
         writeFileSync(dst, f.data)
         const have = existsSync(join(root, f.to)) ? readFileSync(join(root, f.to)) : null
-        if (!have || sha(have) !== sha(f.data)) {
-          // gzip output may differ between zlib versions; compare the unpacked content then
-          const same = have && f.to.endsWith('.gz') && sha(gunzipSync(have)) === sha(gunzipSync(f.data))
-          if (!same) { console.error(`differs: ${f.to}`); bad++ }
-        }
+        if (!have || sha(have) !== sha(f.data)) { console.error(`differs: ${f.to}`); bad++ }
       }
       if (bad) process.exit(1)
       console.log(`build check: ${files.length} files rebuilt from the locked npm packages are identical to editor/vendor`)
@@ -61,9 +56,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   } else {
     for (const f of files) {
       mkdirSync(dirname(join(root, f.to)), { recursive: true })
-      const cur = existsSync(join(root, f.to)) ? readFileSync(join(root, f.to)) : null
-      // gzip output depends on the zlib version: keep the existing file when its unpacked content is already right
-      if (cur && f.to.endsWith('.gz') && sha(gunzipSync(cur)) === sha(gunzipSync(f.data))) continue
       writeFileSync(join(root, f.to), f.data)
     }
     console.log(`built ${files.length} files into editor/vendor`)

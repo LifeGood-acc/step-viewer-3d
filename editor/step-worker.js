@@ -1,18 +1,18 @@
 // Background worker: reads a STEP file with occt-import-js (OpenCascade compiled to WebAssembly) off the page's thread.
 // Messages in:  { type: 'init' } (warm up) or { type: 'read', buffer: ArrayBuffer, params }
 // Messages out: { type: 'ready' | 'reading' | 'done' | 'error', ... }
-// The WASM file ./vendor/occt/occt-import-js.wasm.gz is loaded from the plugin's own folder; nothing comes from the network.
+// The WASM file ./vendor/occt/occt-import-js.wasm is loaded from the plugin's own folder; nothing comes from the network.
 let occt = null
 
 const f32 = (a) => (a instanceof Float32Array ? a.slice() : new Float32Array(a))
 const u32 = (a) => (a instanceof Uint32Array ? a.slice() : new Uint32Array(a))
 
-// The converter's WebAssembly is shipped gzip-compressed (7.6 MB -> 3.1 MB); the browser unpacks it here. To use another build, compress it
-// with `gzip -9n` and put it in the place of the .gz (see THIRD_PARTY_NOTICES.md).
+// The converter's WebAssembly is shipped as a plain file (the unmodified occt-import-js.wasm, 7.6 MB). To use another build, put it in
+// the place of that file (see THIRD_PARTY_NOTICES.md).
 async function loadWasm() {
-  const r = await fetch('./vendor/occt/occt-import-js.wasm.gz')
-  if (!r.ok || !r.body) throw new Error('converter file not available')
-  return new Uint8Array(await new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer())
+  const r = await fetch('./vendor/occt/occt-import-js.wasm')
+  if (!r.ok) throw new Error('converter file not available')
+  return new Uint8Array(await r.arrayBuffer())
 }
 
 // One load, shared by the 'init' and the 'read' message (the handler is async, so they can overlap).

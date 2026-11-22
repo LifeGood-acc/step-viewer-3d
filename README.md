@@ -188,13 +188,13 @@ The plugin's own code is MIT ([LICENSE](LICENSE)). It bundles **occt-import-js 0
 CASCADE Technology 7.6.1 (LGPL-2.1 with the Open CASCADE exception 1.0)**, and three.js (MIT).
 This software makes use of or is based on facilities provided by the Open CASCADE Technology software.
 
-The converter is shipped as two **replaceable files** (`editor/vendor/occt/occt-import-js.js` and `occt-import-js.wasm.gz`).
-The WebAssembly file is unmodified (it is stored gzip-compressed: 3.1 MB instead of 7.6 MB; the checksum is that of the content); the JavaScript glue carries one documented patch (it removes calls to the Function constructor, which Orca's
+The converter is shipped as two **replaceable files** (`editor/vendor/occt/occt-import-js.js` and `occt-import-js.wasm`).
+The WebAssembly file (7.6 MB) is the unmodified file of the npm package, byte for byte; the JavaScript glue carries one documented patch (it removes calls to the Function constructor, which Orca's
 plugin frames forbid), reproducible with `dev/patch-occt.mjs` from the original kept in `licenses/original/`. Checksums are in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). To use your own build, build occt-import-js from source, compress the `.wasm` with `gzip -9n` and overwrite those two files. Source locations, versions, license texts and the exact
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). To use your own build, build occt-import-js from source and overwrite those two files. Source locations, versions, license texts and the exact
 steps are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [licenses/](licenses/).
 
-**Source code of the LGPL parts:** the exact upstream versions (occt-import-js tag 0.0.23, OCCT commit `d2abb6d844231cb8f29be6894440874a4700e4a5`) are pinned in THIRD_PARTY_NOTICES.md; `sh dev/fetch-lgpl-source.sh` builds the corresponding-source archive, which is also attached to every release of this repository (SHA-256 of the 0.25.1 archive: `ea1d1620984ec60bf36f9e38aaaf7f57713eca7628f2e7aaafeb75331e99d18b`), and a written offer for it (through the issues of this repository, no e-mail needed) is in THIRD_PARTY_NOTICES.md.
+**Source code of the LGPL parts:** the exact upstream versions (occt-import-js tag 0.0.23, OCCT commit `d2abb6d844231cb8f29be6894440874a4700e4a5`) are pinned in THIRD_PARTY_NOTICES.md; `sh dev/fetch-lgpl-source.sh` builds the corresponding-source archive, which is also attached to every release of this repository (SHA-256 of the archive attached to the releases, built for 0.25.1 and unchanged for 0.25.2: `ea1d1620984ec60bf36f9e38aaaf7f57713eca7628f2e7aaafeb75331e99d18b`), and a written offer for it (through the issues of this repository, no e-mail needed) is in THIRD_PARTY_NOTICES.md.
 
 ## Development
 

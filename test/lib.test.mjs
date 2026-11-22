@@ -5,7 +5,6 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { KEYMAP, VIEW_NAMES } from '../editor/shared/keymap.js'
 import { spawnSync } from 'node:child_process'
-import { gunzipSync } from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { summarizeParts, fitDistance, STRINGS, makeT, makeFormat, niceStep, partHue, pickLocale, detectStepUnit, planUnit, buildRows, converterParams, QUALITY, memoryEstimateGB, WARN_BYTES, looksLikeStep, isStartText, extOf, pickFile, SUPPORTED_EXT, HARD_MAX_BYTES, stateLine, presetDirection, PRESETS, clipPlane, fileAxisToView, measureInfo, filterIndices } from '../editor/lib.js'
@@ -149,9 +148,9 @@ test('the sample STEP file is a STEP file with a length unit', () => {
 
 test('the converter: WebAssembly unmodified, JS glue patched only by dev/patch-occt.mjs (LGPL: changes are documented)', async () => {
   const sha = (f) => createHash('sha256').update(readFileSync(join(root, f))).digest('hex')
-  const wasm = gunzipSync(readFileSync(join(root, 'editor/vendor/occt/occt-import-js.wasm.gz'))) // shipped compressed
-  assert.equal(createHash('sha256').update(wasm).digest('hex'), '33391fc9d94ea5c869a6718488bf0a9a464222bac9bdc764dfe1690cef281952') // the uncompressed content is the file of npm occt-import-js@0.0.23
-  assert.ok(readFileSync(join(root, 'editor/vendor/occt/occt-import-js.wasm.gz')).length < wasm.length / 2, 'compressed it is under half the size')
+  const wasm = readFileSync(join(root, 'editor/vendor/occt/occt-import-js.wasm')) // shipped as a plain file (the catalog rejects .gz)
+  assert.equal(createHash('sha256').update(wasm).digest('hex'), '33391fc9d94ea5c869a6718488bf0a9a464222bac9bdc764dfe1690cef281952') // the file of npm occt-import-js@0.0.23, byte for byte
+  assert.deepEqual([...wasm.subarray(0, 4)], [0x00, 0x61, 0x73, 0x6d], 'a WebAssembly module, not an archive')
   assert.equal(sha('licenses/original/occt-import-js-0.0.23.js'), '3fb44ce11d00611f9b3f3c5775d520ebab48930c1f08279b7b1316f05f0d3379') // the original glue
   assert.equal(sha('editor/vendor/occt/occt-import-js.js'), '6b6c2651245a711c259e712f8ee6653f57a07bdf84050be168d9237bde9fcde5') // the shipped, patched glue
   const { patch } = await import('../dev/patch-occt.mjs')
@@ -177,8 +176,8 @@ test('the viewer makes no network requests and uses no eval', () => {
   // Only our own code: the vendored libraries are covered by their licenses and checked in the page run.
   for (const f of ['viewer.js', 'lib.js', 'index.html', 'viewer.css', 'step-worker.js']) {
     let text = readFileSync(join(editor, f), 'utf8')
-    // the one thing that is fetched: the converter's own compressed WebAssembly, by a fixed relative path (the worker and the page fallback)
-    const own = "fetch('./vendor/occt/occt-import-js.wasm.gz')"
+    // the one thing that is fetched: the converter's own WebAssembly, by a fixed relative path (the worker and the page fallback)
+    const own = "fetch('./vendor/occt/occt-import-js.wasm')"
     assert.ok(text.split(own).length - 1 <= 1, `${f} fetches the converter more than once`)
     text = text.split(own).join('')
     assert.ok(!/\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon|\beval\s*\(|new Function/.test(text), `${f} uses a network or eval API`)

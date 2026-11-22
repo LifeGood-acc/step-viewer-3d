@@ -9,7 +9,6 @@
 // The three.js files are the readable builds from the npm package `three` (build/three.module.js and build/three.core.js; the package
 // ships no .min.js since r187) and the r<version> tag at https://github.com/mrdoob/three.js. Nothing here is minified by this project.
 import { createHash } from 'node:crypto'
-import { gunzipSync, gzipSync } from 'node:zlib'
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -27,7 +26,7 @@ export function checkVendor(r = root) {
     for (const f of pkg.files) {
       const p = join(r, f.to)
       if (!existsSync(p)) problems.push(`${f.to}: missing`)
-      else if (sha256(f.gzip ? gunzipSync(readFileSync(p)) : readFileSync(p)) !== f.sha256) problems.push(`${f.to}: SHA-256 differs from dev/vendor.json (${pkg.name}@${pkg.version})`)
+      else if (sha256(readFileSync(p)) !== f.sha256) problems.push(`${f.to}: SHA-256 differs from dev/vendor.json (${pkg.name}@${pkg.version})`)
     }
   }
   return problems
@@ -50,7 +49,7 @@ function update() {
       for (const f of wanted) {
         const data = readFileSync(join(dir, 'package', f.from))
         if (sha256(data) !== f.sha256) throw new Error(`${pkg.name}@${pkg.version}: ${f.from} is not what dev/vendor.json records (${f.to})`)
-        writes.push([f.to, f.gzip ? gzipSync(data, { level: 9 }) : data]) // a gzip entry: the file is the compressed form, its SHA-256 that of the content
+        writes.push([f.to, data])
       }
     }
     for (const [to, data] of writes) {

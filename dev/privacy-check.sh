@@ -42,7 +42,12 @@ files=$(git ls-files -co --exclude-standard)
 : > "$tmp/f"
 for f in $files; do
   case "$f" in dev/privacy-check.sh) continue;; esac
-  { scan_stream < "$f"; case "$f" in editor/vendor/*|licenses/*|THIRD_PARTY_NOTICES.md|package-lock.json) ;; *) strip_public < "$f" | grep -aEon "$pat_mail" | grep -aviE "$mail_ok" | sed 's/^/e-mail: /';; esac; } | sed "s|^|$f: |" >> "$tmp/f"
+  { case "$f" in
+      # the converter's WebAssembly is the unmodified upstream file; its assertion messages carry the upstream developer's Windows build path
+      # (public in the npm package, not ours). Only that one fixed string is let through, every other rule still applies to the file.
+      editor/vendor/occt/occt-import-js.wasm) sed -e 's#C:/Use[r]s/[A-Za-z0-9_.-]*/GitRepos/occt-import-js/#UPSTREAM_BUILD_PATH/#g' < "$f" | scan_stream;;
+      *) scan_stream < "$f";;
+    esac; case "$f" in editor/vendor/*|licenses/*|THIRD_PARTY_NOTICES.md|package-lock.json) ;; *) strip_public < "$f" | grep -aEon "$pat_mail" | grep -aviE "$mail_ok" | sed 's/^/e-mail: /';; esac; } | sed "s|^|$f: |" >> "$tmp/f"
 done
 report "files ($(echo "$files" | wc -l | tr -d ' ') files)"
 

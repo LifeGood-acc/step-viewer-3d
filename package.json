@@ -1,6 +1,6 @@
 {
   "name": "step-viewer-3d",
-  "version": "0.25.1",
+  "version": "0.25.2",
   "private": true,
   "description": "Build and test tooling for the STEP Viewer 3D plugin for Orca. The plugin itself needs no build step to run; npm is only used to fetch the third-party files in editor/vendor.",
   "license": "MIT AND LGPL-2.1-only",

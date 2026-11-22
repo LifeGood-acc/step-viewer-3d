@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.25.2
+
+- Ship the converter as a plain .wasm (catalog rejects .gz): `editor/vendor/occt/occt-import-js.wasm` (7.6 MB, byte for byte the file of occt-import-js 0.0.23, SHA-256 unchanged) replaces `occt-import-js.wasm.gz`. The worker and the page fallback fetch the plain file and hand its bytes to the converter; there is no unpacking step any more. `dev/build.mjs`, `dev/vendor.mjs`, `dev/vendor.json`, the tests and the LGPL texts (README, THIRD_PARTY_NOTICES.md) name the plain file; replacing the converter now means overwriting the two files without compressing. No change to the viewer, no new permissions, no network access. The LGPL corresponding-source archive of 0.25.1 stays valid (same converter) and is attached to this release again.
+- Tests: the repository check lists the file types the catalog rejects (.gz, .zip, .whl, .icns, .o, .a, .hwp) and symbolic links; `samples/assembly.step` must be text. A new check finds stale names: every `editor/vendor/...` path named in the project's own text must exist, no text may name the old `.wasm.gz`, and the worker and the page must fetch the converter file that `dev/vendor.json` records.
+
 ## 0.25.1
 
 - Release preparation (no change to the viewer): `package.json` with `package-lock.json` and `npm ci && npm run build` rebuild `editor/vendor` byte for byte from the locked npm packages (`npm run verify-build` compares); `dev/privacy-check.sh` checks every file and the whole Git history for private data; `LICENSE` names "LifeGood-acc and contributors"; README has install, support and build notes. The LGPL source offer and the corresponding-source script (`dev/fetch-lgpl-source.sh`) are in THIRD_PARTY_NOTICES.md.

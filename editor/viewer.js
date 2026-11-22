@@ -405,10 +405,10 @@ function readInPage(me, bytes, params, t0, onDone) {
         })
       }
       pageOcct ??= (async () => {
-        // the WebAssembly is shipped gzip-compressed; one instance for all page-thread reads
-        const r = await fetch('./vendor/occt/occt-import-js.wasm.gz')
-        if (!r.ok || !r.body) throw new Error('converter file not available')
-        const wasmBinary = new Uint8Array(await new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer())
+        // the WebAssembly is a plain file; one instance for all page-thread reads
+        const r = await fetch('./vendor/occt/occt-import-js.wasm')
+        if (!r.ok) throw new Error('converter file not available')
+        const wasmBinary = new Uint8Array(await r.arrayBuffer())
         return window.occtimportjs({ wasmBinary })
       })()
       const occt = await pageOcct
