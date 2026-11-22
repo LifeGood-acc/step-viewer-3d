@@ -1,0 +1,91 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stablyai/orca/main/docs/schemas/plugins/orca-plugin.v2.schema.json",
+  "manifestVersion": 2,
+  "id": "step-viewer-3d",
+  "name": "STEP Viewer 3D",
+  "version": "0.25.1",
+  "description": "View STEP CAD files (.step, .stp) in Orca: assemblies and parts as a list with color and visibility, wireframe, mesh quality, size and unit from the file. The OpenCascade converter runs in a background worker, fully offline, with no permissions. Export a copy as GLB, STL, OBJ, PLY, 3MF, PNG or a turntable video, compress a model under a size, and transform, decimate or check it as a copy.",
+  "license": "MIT AND LGPL-2.1-only",
+  "icon": "assets/icon.png",
+  "cover": {
+    "path": "docs/images/cover.png",
+    "alt": "A small CAD assembly with a selected part; the toolbar has six elements and the Parts tab shows its part card"
+  },
+  "screenshots": [
+    {
+      "path": "docs/images/parts-light.png",
+      "alt": "The Parts tab with the tree of the assembly and the part card of the selected part",
+      "caption": "Parts: select, see the numbers",
+      "theme": "light"
+    },
+    {
+      "path": "docs/images/look-menu.png",
+      "alt": "The Appearance menu: color cards, Show edges, helpers and Advanced",
+      "caption": "Appearance: colors as cards, edges, helpers",
+      "theme": "light"
+    },
+    {
+      "path": "docs/images/info-dark.png",
+      "alt": "The Info tab on a dark background: mesh quality, the numbers of the whole model, the unit",
+      "caption": "Info: mesh quality, size and unit from the file",
+      "theme": "dark"
+    },
+    {
+      "path": "docs/images/studio-menu.png",
+      "alt": "The Studio menu with look tiles, background, floor and turntable",
+      "caption": "Studio: looks, background, turntable",
+      "theme": "light"
+    },
+    {
+      "path": "docs/images/export.png",
+      "alt": "The export dialog with 3D file chosen and Save as",
+      "caption": "Export: image, film or 3D file",
+      "theme": "light"
+    },
+    {
+      "path": "docs/images/german.png",
+      "alt": "The viewer with the interface in German",
+      "caption": "English and German",
+      "theme": "light"
+    }
+  ],
+  "engines": {
+    "orca": ">=1.4.248"
+  },
+  "execution": "sandboxed-ui",
+  "pluginApi": 1,
+  "capabilities": [],
+  "contributes": {
+    "customEditors": [
+      {
+        "id": "viewer",
+        "title": "3D",
+        "extensions": [
+          ".step",
+          ".stp",
+          ".stepview"
+        ],
+        "entry": "editor/index.html",
+        "priority": "default",
+        "contentKind": "text",
+        "frame": "isolated"
+      }
+    ],
+    "panels": [
+      {
+        "id": "viewer",
+        "title": "STEP",
+        "icon": "package",
+        "entry": "editor/panel.html"
+      }
+    ],
+    "newFiles": [
+      {
+        "id": "start",
+        "title": "STEP Viewer (drop a model)",
+        "extension": ".stepview",
+        "template": "editor/start.stepview"
+      }
+    ]
+  }
+}

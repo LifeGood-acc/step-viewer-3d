@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STEP Viewer 3D</title>
+<link rel="stylesheet" href="./shared/shell.css">
+<link rel="stylesheet" href="./viewer.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/" } }
+</script>
+</head>
+<body>
+<header id="bar" role="toolbar" data-i18n-aria="toolbar_label">
+  <div class="grp" data-grp="file">
+    <button id="b-open" data-prio="1" data-i18n="open_file" data-i18n-title="tip_open_file">Open file…</button>
+    <button id="b-close" data-needs-model data-prio="3" data-i18n="close_btn" data-i18n-title="close_tip">Close</button>
+    <select id="preset" data-needs-model data-prio="2" data-i18n-aria="preset" data-i18n-title="tip_preset">
+      <option value="" data-i18n="preset" hidden>View</option>
+      <option value="all" data-i18n="pv_all">Show all (R)</option>
+      <option value="iso" data-i18n="pv_iso">Isometric</option>
+      <option value="front" data-i18n="pv_front">Front</option>
+      <option value="back" data-i18n="pv_back">Back</option>
+      <option value="left" data-i18n="pv_left">Left</option>
+      <option value="right" data-i18n="pv_right">Right</option>
+      <option value="top" data-i18n="pv_top">Top</option>
+      <option value="bottom" data-i18n="pv_bottom">Bottom</option>
+      <option value="hero" data-i18n="pv_hero">Hero</option>
+    </select>
+  </div>
+  <div class="grp" data-grp="display">
+    <button id="b-wire" data-needs-model data-prio="5" data-i18n="surface" data-i18n-title="tip_mesh_on" aria-pressed="false">Surface</button>
+    <button id="b-edges" data-needs-model data-prio="6" data-i18n="edges" data-i18n-title="tip_edges" aria-pressed="false">Edges</button>
+    <button id="b-bg" data-prio="6" data-i18n="background" data-i18n-title="tip_background">Background</button>
+    <button id="b-grid" data-needs-model data-prio="9" data-i18n="grid" data-i18n-title="tip_grid" aria-pressed="true">Grid</button>
+    <button id="b-axes" data-needs-model data-prio="10" data-i18n="axes" data-i18n-title="tip_axes" aria-pressed="true">Axes</button>
+    <button id="b-box" data-needs-model data-prio="11" data-i18n="box" data-i18n-title="tip_box" aria-pressed="false">Box</button>
+    <button id="b-over" data-needs-model data-prio="11" data-i18n="over" data-i18n-title="tip_over" aria-pressed="false">Mesh over</button>
+    <button id="b-back" data-needs-model data-prio="12" data-i18n="backfaces" data-i18n-title="tip_backfaces" aria-pressed="true">Backfaces</button>
+  </div>
+  <div class="grp" data-grp="tools">
+    <button id="b-measure" data-needs-model data-prio="4" data-i18n="measure" data-i18n-title="tip_measure" aria-pressed="false">Measure</button>
+  </div>
+  <div class="grp" data-grp="export">
+    <button id="b-export" data-needs-model data-prio="8" data-i18n="export_btn" data-i18n-title="tip_export">Export…</button>
+    <button id="b-shot" data-needs-model data-prio="13" data-i18n="save_image" data-i18n-title="tip_save_image">Save image</button>
+  </div>
+  <span id="bar-spacer"></span>
+  <span id="more-wrap" hidden>
+    <button id="b-more" data-i18n="more" data-i18n-title="more_tip" aria-controls="more-menu" aria-expanded="false">More ▾</button>
+    <div id="more-menu" hidden></div>
+  </span>
+  <button id="b-panel" data-i18n="panel" data-i18n-title="tip_panel" aria-pressed="true">Panel</button>
+</header>
+<div id="main">
+  <div id="stage">
+    <canvas id="gl"></canvas>
+    <div id="msg" class="msg" role="status"><div id="msg-text">Waiting for the file …</div></div>
+    <div id="busy" class="msg busy" role="status" hidden>
+  <div>
+    <div id="busy-text"></div>
+    <div class="progress"><span></span></div>
+    <p class="hint" id="busy-hint"></p>
+    <button id="b-cancel" data-i18n="cancel">Cancel</button>
+  </div>
+</div>
+    <div id="drop" class="drop" role="dialog" aria-labelledby="drop-title" hidden>
+  <div class="drop-card">
+    <div id="drop-title" class="drop-title" data-i18n="drop_title">Drop a STEP file here</div>
+    <p id="drop-formats" class="hint"></p>
+    <button id="b-pick" data-i18n="pick_file">Choose file…</button>
+    <p class="hint" data-i18n="drop_hint"></p>
+    <div id="drop-note" class="drop-note" role="alert" hidden></div>
+  </div>
+</div>
+    <div id="measure-out" class="chip" hidden></div>
+  </div>
+  <div id="resizer" role="separator" aria-orientation="vertical" tabindex="0" data-i18n-aria="resizer_label" data-i18n-title="resizer_label"></div>
+  <aside id="side" data-i18n-aria="side_title">
+    <div class="side-head"><span data-i18n="side_title">Panel</span><button id="side-close" data-i18n-aria="side_close" data-i18n-title="side_close">✕</button></div>
+    <p id="side-empty" data-i18n="side_empty">Open a file to see its details and settings here.</p>
+  <details class="sec" id="quality-sec" data-key="quality" data-always open data-open-default>
+    <summary><span data-i18n="quality">Mesh quality</span></summary>
+    
+    <select id="quality">
+      <option value="coarse" data-i18n="q_coarse">Coarse (fast)</option>
+      <option value="normal" data-i18n="q_normal" selected>Normal</option>
+      <option value="fine" data-i18n="q_fine">Fine (slow, large)</option>
+    </select>
+    <p class="hint" data-i18n="quality_hint"></p>
+    <div id="gate" class="warn" hidden>
+      <div id="gate-text"></div>
+      <div class="row wrap"><button id="b-go" data-i18n="load_anyway">Load anyway</button></div>
+    </div>
+  </details>
+  <details class="sec" id="stats-sec" data-key="stats" open data-open-default hidden>
+    <summary><span data-i18n="stats">Details</span></summary>
+    
+    <dl id="stats"></dl>
+    <div id="warn" class="warn" hidden></div>
+    <div class="row wrap"><button id="b-copy-details" data-needs-model data-i18n="copy_details" data-i18n-title="copy_details_tip">Copy details</button></div>
+  </details>
+  <details class="sec" id="look-sec" data-key="look" open data-open-default hidden>
+    <summary><span data-i18n="shading_title">Appearance</span></summary>
+    
+    <label class="row"><span data-i18n="shading">Shading</span>
+      <select id="shading">
+        <option value="original" data-i18n="sh_original">Original</option>
+        <option value="solid" data-i18n="sh_solid">Solid gray</option>
+        <option value="normals" data-i18n="sh_normals">Normals</option>
+        <option value="xray" data-i18n="sh_xray">X-ray</option>
+        <option value="matcap" data-i18n="sh_matcap">Matcap</option>
+        <option value="flat" data-i18n="sh_flat">Flat</option>
+        <option value="vertex" data-i18n="sh_vertex">Vertex colors</option>
+      </select>
+    </label>
+    <label class="row"><span data-i18n="opacity">Opacity</span> <input id="opacity" type="range" min="10" max="100" step="5" value="100"><output id="opacity-out">100</output></label>
+  </details>
+  <details class="sec" id="sec-sec" data-key="section" open data-open-default hidden>
+    <summary><span data-i18n="section_title">Section</span></summary>
+    
+    <label class="row"><span data-i18n="sec_axis">Cut along</span>
+      <select id="sec-axis">
+        <option value="" data-i18n="sec_off">Off</option>
+        <option value="x">X</option>
+        <option value="y">Y</option>
+        <option value="z">Z</option>
+      </select>
+    </label>
+    <label class="row"><span data-i18n="sec_pos">Position</span> <input id="sec-pos" type="range" min="0" max="100" step="1" value="50" disabled></label>
+    <label class="row"><input id="sec-flip" type="checkbox" disabled> <span data-i18n="sec_flip">Flip side</span></label>
+  </details>
+  <details class="sec" id="up-sec" data-key="orient" open data-open-default hidden>
+    <summary><span data-i18n="orientation">Orientation</span></summary>
+    
+    <label class="row"><span data-i18n="up_is">Up is</span>
+      <select id="up">
+        <option value="z" data-i18n="up_z" selected>+Z up (CAD)</option>
+        <option value="y" data-i18n="up_y">+Y up</option>
+      </select>
+    </label>
+    <p class="hint" id="up-hint"></p>
+  </details>
+  <details class="sec" id="part-sec" data-key="parts" open data-open-default hidden>
+    <summary><span data-i18n="parts">Parts</span> <span id="part-count" class="muted"></span></summary>
+    <div class="row wrap">
+      <button id="l-all" data-i18n="all">All</button>
+      <button id="l-none" data-i18n="none">None</button>
+      <button id="l-inv" data-i18n="invert">Invert</button>
+      <button id="l-color" data-i18n="color_by_part" data-i18n-title="tip_color_by_part" aria-pressed="false">Color by part</button>
+    </div>
+    <p class="hint" data-i18n="parts_hint"></p>
+    <input id="filter" type="search" data-i18n-ph="filter_ph" data-i18n-aria="filter" hidden>
+    <div id="parts" class="parts"></div>
+  </details>
+  <details class="sec" id="measure-sec" data-key="measure" data-open-default open>
+    <summary><span data-i18n="ms_title">Measure</span></summary>
+    <label class="row"><span data-i18n="ms_mode">Mode</span>
+      <select id="measure-mode" data-i18n-aria="ms_mode">
+        <option value="distance" data-i18n="ms_distance_mode">Distance (2 points)</option>
+        <option value="angle" data-i18n="ms_angle_mode">Angle (3 points)</option>
+        <option value="circle" data-i18n="ms_circle_mode">Circle diameter (3 points on the rim)</option>
+        <option value="edge" data-i18n="ms_edge_mode">Edge length (click near an edge)</option>
+        <option value="chain" data-i18n="ms_chain_mode">Chain (several points)</option>
+        <option value="parts" data-i18n="ms_parts_mode" hidden>Parts (two parts)</option>
+      </select>
+    </label>
+  </details>
+  <details class="sec" id="tools-sec" data-key="tools">
+    <summary><span data-i18n="tools_title">Tools</span></summary>
+    <p class="hint" data-i18n="tl_intro"></p>
+    <h4 class="sub" data-i18n="tl_transform">Transform</h4>
+    <div class="row"><span data-i18n="tl_unit">Unit</span>
+      <select id="tl-unit" data-i18n-aria="tl_unit">
+        <option value="µm">µm</option><option value="mm" selected>mm</option><option value="cm">cm</option><option value="m">m</option><option value="in">in</option><option value="ft">ft</option>
+      </select>
+    </div>
+    <div class="row wrap">
+      <button id="tl-convert" data-needs-model data-i18n="tl_convert" data-i18n-title="tl_convert_tip">Convert</button>
+      <button id="tl-assign" data-needs-model data-i18n="tl_assign" data-i18n-title="tl_assign_tip">Set as</button>
+    </div>
+    <p class="hint" id="tl-unit-hint" hidden data-i18n="tl_unit_unknown"></p>
+    <div class="row wrap">
+      <button id="tl-center" data-needs-model data-i18n="tl_center" data-i18n-title="tl_center_tip">Center</button>
+      <button id="tl-floor" data-needs-model data-i18n="tl_floor" data-i18n-title="tl_floor_tip">Center on floor</button>
+      <button id="tl-onfloor" data-needs-model data-i18n="tl_onfloor" data-i18n-title="tl_onfloor_tip">Put on floor</button>
+      <button id="tl-mincorner" data-needs-model data-i18n="tl_mincorner" data-i18n-title="tl_mincorner_tip">Corner at 0</button>
+    </div>
+    <label class="row"><span data-i18n="tl_scale">Scale ×</span> <input id="tl-scale" type="number" min="0.000001" step="any" value="1"> <button id="tl-scale-go" data-needs-model data-i18n="tl_apply">Apply</button></label>
+    <div class="row wrap" id="tl-rotate"><span data-i18n="tl_rotate">Rotate 90°</span>
+      <button data-axis="x" data-deg="90" data-needs-model data-i18n-title="tl_rotate_tip">X</button><button data-axis="y" data-deg="90" data-needs-model data-i18n-title="tl_rotate_tip">Y</button><button data-axis="z" data-deg="90" data-needs-model data-i18n-title="tl_rotate_tip">Z</button>
+    </div>
+    <div class="row wrap" id="tl-mirror"><span data-i18n="tl_mirror">Mirror</span>
+      <button data-axis="x" data-needs-model>X</button><button data-axis="y" data-needs-model>Y</button><button data-axis="z" data-needs-model>Z</button>
+    </div>
+    <div class="row wrap"><button id="tl-bake-up" data-needs-model data-i18n="tl_bake_up" data-i18n-title="tl_bake_up_tip">Make "Up is" part of the model</button></div>
+    <div id="tl-parts-group">
+      <h4 class="sub" data-i18n="tl_parts">Parts</h4>
+      <div class="row wrap">
+        <button id="tl-remove-hidden" data-needs-model data-i18n="tl_remove_hidden">Remove hidden parts</button>
+        <button id="tl-remove-selected" data-needs-model data-i18n="tl_remove_selected">Remove selected part</button>
+        <button id="tl-merge" data-needs-model data-i18n="tl_merge">Merge visible parts</button>
+      </div>
+      <p class="hint" data-i18n="tl_parts_hint"></p>
+    </div>
+    <h4 class="sub" data-i18n="tl_mesh">Mesh</h4>
+    <label class="row"><span data-i18n="tl_keep">Keep</span> <input id="tl-keep" type="range" min="5" max="95" step="5" value="50"><output id="tl-keep-out">50</output>%</label>
+    <label class="row"><span data-i18n="tl_detail">Detail</span>
+      <select id="tl-detail">
+        <option value="careful" data-i18n="tl_detail_careful">Careful</option>
+        <option value="normal" data-i18n="tl_detail_normal" selected>Normal</option>
+        <option value="target" data-i18n="tl_detail_target">Reach the target</option>
+      </select>
+    </label>
+    <label class="row"><input id="tl-lock" type="checkbox"> <span data-i18n="tl_lock_border">Keep borders</span></label>
+    <div class="row wrap">
+      <button id="tl-decimate" data-needs-model data-i18n="tl_decimate">Decimate</button>
+      <button id="tl-check-btn" data-needs-model data-i18n="tl_check" data-i18n-title="tl_check_tip">Check mesh</button>
+      <button id="tl-cancel" hidden data-i18n="tl_cancel">Cancel</button>
+    </div>
+    <div id="tl-result" class="hint" role="status" aria-live="polite" hidden></div>
+    <div id="tl-thumbs" class="thumbs" hidden>
+      <figure><canvas id="tl-cv-before" aria-hidden="true"></canvas><figcaption data-i18n="tl_before">Before</figcaption></figure>
+      <figure><canvas id="tl-cv-after" aria-hidden="true"></canvas><figcaption data-i18n="tl_after">After</figcaption></figure>
+    </div>
+    <div id="tl-check" class="hint" role="status" aria-live="polite" hidden></div>
+    <p id="tl-status" class="hint" hidden></p>
+    <div class="row wrap"><button id="tl-reset" hidden data-i18n="tl_reset">Back to the file</button></div>
+  </details>
+  <details class="sec" id="export-sec" data-key="export">
+    <summary><span data-i18n="export_title">Export a copy</span></summary>
+    <p class="hint" data-i18n="ex_hint_copy"></p>
+    <label class="row"><span data-i18n="ex_format">Format</span>
+      <select id="ex-format" data-needs-model>
+        <option value="glb" data-i18n="ex_fmt_glb">GLB (glTF)</option>
+        <option value="glbc" data-i18n="ex_fmt_glbc">GLB, compressed (under a size)</option>
+        <option value="stl" data-i18n="ex_fmt_stl">STL</option>
+        <option value="obj" data-i18n="ex_fmt_obj">OBJ</option>
+        <option value="ply" data-i18n="ex_fmt_ply">PLY</option>
+        <option value="3mf" data-i18n="ex_fmt_3mf">3MF</option>
+        <option value="png" data-i18n="ex_fmt_png">PNG image</option>
+        <option value="webm" data-i18n="ex_fmt_webm">Turntable video (WebM)</option>
+      </select>
+    </label>
+    <div id="ex-mesh-opts">
+      <label class="row"><input id="ex-visible" type="checkbox" checked> <span data-i18n="ex_visible_only">Only visible parts</span></label>
+      <label class="row"><span data-i18n="ex_up">Up in the copy</span>
+        <select id="ex-up">
+          <option value="keep" data-i18n="ex_up_keep">As in the file</option>
+          <option value="y" data-i18n="ex_up_y">+Y up (glTF)</option>
+          <option value="z" data-i18n="ex_up_z">+Z up (CAD, printing)</option>
+        </select>
+      </label>
+    </div>
+    <div id="ex-glbc-opts" hidden>
+      <label class="row"><span data-i18n="ex_target">Target size (MiB)</span> <input id="ex-target" type="number" min="0.001" max="60" step="any" value="45"></label>
+      <label class="row"><span data-i18n="ex_texmax">Textures at most</span>
+        <select id="ex-texmax">
+          <option value="0" data-i18n="ex_tex_keep">Original size</option>
+          <option value="4096">4096 px</option>
+          <option value="2048" selected>2048 px</option>
+          <option value="1024">1024 px</option>
+          <option value="512">512 px</option>
+        </select>
+      </label>
+      <label class="row"><span data-i18n="ex_precision">Precision</span>
+        <select id="ex-precision">
+          <option value="fine" data-i18n="ex_prec_fine">Fine</option>
+          <option value="balanced" data-i18n="ex_prec_balanced" selected>Balanced</option>
+          <option value="small" data-i18n="ex_prec_small">Smallest</option>
+        </select>
+      </label>
+      <label class="row" id="ex-thin-row" hidden><input id="ex-thin" type="checkbox"> <span class="grow" data-i18n="ex_thin">Remove points if the target needs it</span></label>
+    </div>
+    <div id="ex-png-opts" hidden>
+      <label class="row"><span data-i18n="ex_png_size">Size</span>
+        <select id="ex-png-size">
+          <option value="0" data-i18n="ex_size_shown">As shown</option>
+          <option value="x2" data-i18n="ex_size_x2">2× the view</option>
+          <option value="x4" data-i18n="ex_size_x4">4× the view</option>
+          <option value="1920">1920 px</option>
+          <option value="3840">3840 px</option>
+        </select>
+      </label>
+      <label class="row"><span data-i18n="ex_png_bg">Background</span>
+        <select id="ex-png-bg">
+          <option value="transparent" data-i18n="ex_bg_transparent">Transparent (model only)</option>
+          <option value="shown" data-i18n="ex_bg_shown">As shown</option>
+        </select>
+      </label>
+      <p class="hint" id="ex-png-hint" data-i18n="ex_png_alpha_hint" hidden></p>
+    </div>
+    <div id="ex-webm-opts" hidden>
+      <label class="row"><span data-i18n="ex_seconds">Length</span>
+        <select id="ex-seconds">
+          <option value="4">4 s</option>
+          <option value="8" selected>8 s</option>
+          <option value="15">15 s</option>
+        </select>
+      </label>
+      <label class="row"><span data-i18n="ex_png_size">Size</span>
+        <select id="ex-webm-size">
+          <option value="0" data-i18n="ex_size_shown">As shown</option>
+          <option value="1280">1280 px</option>
+          <option value="1920">1920 px</option>
+        </select>
+      </label>
+    </div>
+    <p id="ex-lossy" class="hint"></p>
+    <p id="ex-notes" class="hint" hidden></p>
+    <p id="ex-estimate" class="hint"></p>
+    <div class="row wrap">
+      <button id="b-ex-make" data-needs-model data-i18n="ex_make">Create copy</button>
+      <button id="b-ex-cancel" data-i18n="cancel" hidden>Cancel</button>
+      <button id="b-ex-save" data-i18n="ex_save" disabled>Save as …</button>
+    </div>
+    <div id="ex-result" class="hint" role="status" aria-live="polite" hidden></div>
+  </details>
+  <div class="sec-plain" id="keep-row" hidden style="padding:8px 10px 0">
+    <p class="hint" id="keep-text"></p>
+  </div>
+  <div class="sec-plain" style="padding:8px 10px">
+    <button id="b-resetprefs" data-i18n="reset_prefs">Reset settings</button>
+  </div>
+
+  </aside>
+</div>
+<input id="file-input" type="file" hidden>
+<script type="module" src="./viewer.js"></script>
+</body>
+</html>

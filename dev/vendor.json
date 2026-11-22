@@ -1,0 +1,88 @@
+{
+  "comment": "Provenance of editor/vendor. Check: node dev/vendor.mjs --check. Rebuild from npm: node dev/vendor.mjs --update.",
+  "packages": [
+    {
+      "name": "three",
+      "version": "0.187.0",
+      "license": "MIT",
+      "integrity": "sha512-Qiu7R+Cmh8CstZsY1uJOSWnVlfo7ZtNLV7mF8Jltk3LB3AtDu9cRZlcnRKkAk8Y4z6KKw35z7Y7Urd7jWY8etA==",
+      "source": "https://github.com/mrdoob/three.js/tree/r187",
+      "npm": "https://www.npmjs.com/package/three/v/0.187.0",
+      "note": "three.module.js and three.core.js are the builds of this npm release as published (build/); the npm package ships no minified builds since r187, so the readable files are vendored unchanged.",
+      "files": [
+        {
+          "from": "build/three.module.js",
+          "to": "editor/vendor/three.module.js",
+          "sha256": "104f56145899722094556490d787aae0617cc2fc3382f31df02d724ea1aee341"
+        },
+        {
+          "from": "build/three.core.js",
+          "to": "editor/vendor/three.core.js",
+          "sha256": "613e370f76638fdef83926642bf256dc9615684922de1ce1f63a8583e5d78578"
+        },
+        {
+          "from": "LICENSE",
+          "to": "editor/vendor/LICENSE.three.txt",
+          "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+        },
+        {
+          "from": "examples/jsm/controls/OrbitControls.js",
+          "to": "editor/vendor/addons/controls/OrbitControls.js",
+          "sha256": "e7fca2fe9e7670a828af9b28084669a5909445b7f36f1f26cee9bf8f2961c32c"
+        }
+      ]
+    },
+    {
+      "name": "occt-import-js",
+      "version": "0.0.23",
+      "license": "LGPL-2.1",
+      "integrity": "sha512-RFfYQXYFX5C1mB1Aywm0ShcUKzXOr/VzTnlzhBSDJOR6YCAPt1HYCzeXWg1vwwjn/cUxwqRNhhtf1dlewoZYCQ==",
+      "source": "https://github.com/kovacsv/occt-import-js/tree/0.0.23",
+      "npm": "https://www.npmjs.com/package/occt-import-js/v/0.0.23",
+      "note": "The .wasm is the unmodified npm file, shipped gzip-compressed (editor/vendor/occt/occt-import-js.wasm.gz; the recorded SHA-256 is that of the UNCOMPRESSED npm file, which dev/vendor.mjs checks after unpacking). The original glue file is kept in licenses/original; editor/vendor/occt/occt-import-js.js is rebuilt from it by dev/patch-occt.mjs (two Function-constructor calls replaced; it has no \"from\").",
+      "files": [
+        {
+          "from": "dist/occt-import-js.wasm",
+          "to": "editor/vendor/occt/occt-import-js.wasm.gz",
+          "sha256": "33391fc9d94ea5c869a6718488bf0a9a464222bac9bdc764dfe1690cef281952",
+          "gzip": true
+        },
+        {
+          "from": "dist/occt-import-js.js",
+          "to": "licenses/original/occt-import-js-0.0.23.js",
+          "sha256": "3fb44ce11d00611f9b3f3c5775d520ebab48930c1f08279b7b1316f05f0d3379"
+        },
+        {
+          "to": "editor/vendor/occt/occt-import-js.js",
+          "sha256": "6b6c2651245a711c259e712f8ee6653f57a07bdf84050be168d9237bde9fcde5"
+        }
+      ]
+    },
+    {
+      "name": "meshoptimizer",
+      "version": "1.3.0",
+      "license": "MIT",
+      "integrity": "sha512-2oZqMAcEEiCtXWUjIGtZ71oPx1B0ZxYGTqIKsXB1wzWFhleNsCFxQuUJzgCV706bRcwPWtMGf1odmQvAcqKkIw==",
+      "source": "https://github.com/zeux/meshoptimizer",
+      "npm": "https://www.npmjs.com/package/meshoptimizer/v/1.3.0",
+      "note": "Encoder (compression for EXT_meshopt_compression) and simplifier (decimation, point thinning), each a JavaScript file with its WebAssembly embedded as text; loaded only when a tool is used. The decoder that opens such files is the one inside three.js (examples/jsm/libs/meshopt_decoder.module.js, 0.22).",
+      "files": [
+        {
+          "from": "meshopt_encoder.js",
+          "to": "editor/vendor/meshopt/meshopt_encoder.js",
+          "sha256": "22c128be3e22b187e2d2661882fc62f51e995f409c0fe14c9f6358cfbaff1611"
+        },
+        {
+          "from": "meshopt_simplifier.js",
+          "to": "editor/vendor/meshopt/meshopt_simplifier.js",
+          "sha256": "c3098ee4cb4fc242b84f064c88898e76e44bf58b0e1f693507f323c08cdbb5ed"
+        },
+        {
+          "from": "LICENSE.md",
+          "to": "editor/vendor/meshopt/LICENSE.meshoptimizer.txt",
+          "sha256": "f03037ca7bad1e3eb7f4a63fa6084a8baabd5ba30d3c239a9a7f35705d873e26"
+        }
+      ]
+    }
+  ]
+}

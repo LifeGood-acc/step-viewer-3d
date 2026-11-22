@@ -1,0 +1,6 @@
+* text=auto
+editor/vendor/** -text
+licenses/** -text
+*.wasm binary
+*.png binary
+*.step text eol=lf

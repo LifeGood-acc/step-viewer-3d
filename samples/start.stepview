@@ -1,0 +1,3 @@
+stepview-start
+This is the start page of the STEP Viewer 3D. It shows an empty view that takes any STEP file (.step, .stp)
+you drop onto it. The file itself is never changed. You can delete this file.
