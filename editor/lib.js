@@ -19,7 +19,7 @@ export const STRINGS = {
     bg_look: 'like the look',
     surface: 'Surface',
     mesh: 'Mesh',
-    tip_mesh_on: 'Shows the closed surface. Click for the mesh, the edges of all triangles (W)',
+    tip_mesh_on: 'Surface shown. Click for the mesh (W)',
     tip_surface_on: 'Show the surface again (W)',
     reset_prefs: 'Reset all',
     edges: 'Edges',
@@ -32,15 +32,15 @@ export const STRINGS = {
     box: 'Box',
     over: 'Mesh over',
     backfaces: 'Backfaces',
-    panel: 'Panel',
-    tip_background: 'Background: like Orca (or like the studio look), or the opposite (B)',
+    panel: 'Sidebar',
+    tip_background: 'Next background (B)',
     tip_edges: 'CAD edges: the lines where two faces of the part meet',
     tip_grid: 'Floor grid (G)',
     tip_axes: 'X (red), Y (green), Z (blue) axes at the origin',
     tip_box: 'Bounding box',
     tip_over: 'Draws the mesh lines over the closed surface',
     tip_backfaces: 'Draw the back side of surfaces',
-    tip_panel: 'Show or hide the panel (P)',
+    tip_panel: 'Show or hide the sidebar (P)',
     quality: 'Mesh quality',
     q_coarse: 'Coarse (fast)',
     q_normal: 'Normal',
@@ -62,12 +62,12 @@ export const STRINGS = {
     invert: 'Invert',
     color_by_part: 'Color by part',
     tip_color_by_part: 'Give every part its own color',
-    tip_tint_shading: 'Colors per part show in the Original look only (Appearance > Shading)',
+    tip_tint_shading: 'Colors per part show in the Original look only',
     studio_unlit: 'This look is not lit: studio lights change nothing here',
     studio_points_no_shadow: 'Points and splats cast no shadow',
     tip_needs_selection: 'Select a part first',
     parts_hint: 'Click a part in the view to select it. Double-click a row to show only that part. Indented rows belong to the assembly above.',
-    parts_more: '… and {n} more (list limited to {max}; All / None apply to all parts).',
+    parts_more: '… and {n} more (list limited to {max}; the buttons beside the list apply to all parts).',
     visible_label: 'Visible: {name}',
     part_n: 'Part {n}',
     s_size: 'File size',
@@ -101,7 +101,7 @@ export const STRINGS = {
     pv_right: 'Right',
     pv_top: 'Top',
     pv_bottom: 'Bottom',
-    tip_preset: 'Camera views: every view shows the whole model (keys 1 to 8, R shows all)',
+    tip_preset: 'Pick a view (keys 1 to 8, R shows all)',
     measure: 'Measure',
     tip_measure: 'Measure the distance between two points on the surface (M)',
     measure_hint: 'Click two points on the surface. Click again to start over, Esc to leave.',
@@ -147,12 +147,12 @@ export const STRINGS = {
     s_name: 'File',
     loading: 'Loading {type} ({size}) …',
     toolbar_label: 'Toolbar',
-    side_title: 'Panel',
-    side_close: 'Close panel',
+    side_title: 'Sidebar',
+    side_close: 'Close sidebar',
     side_empty: 'Open a file to see its details and settings here.',
     more: 'More ▾',
     more_tip: 'More: open a folder, reset everything',
-    resizer_label: 'Resize the panel (arrow keys; double-click resets)',
+    resizer_label: 'Resize the sidebar (arrow keys; double-click resets)',
     waiting: 'Waiting for the file …',
     starting: 'Starting the converter …',
     reading: 'Reading the STEP file … {s} s',
@@ -180,7 +180,7 @@ export const STRINGS = {
     bg_look: 'wie der Look',
     surface: 'Fläche',
     mesh: 'Mesh',
-    tip_mesh_on: 'Zeigt die geschlossene Fläche. Klicken für das Mesh, die Kanten aller Dreiecke (W)',
+    tip_mesh_on: 'Fläche wird gezeigt. Klick: Mesh (W)',
     tip_surface_on: 'Wieder die Fläche zeigen (W)',
     reset_prefs: 'Alles zurücksetzen',
     edges: 'Kanten',
@@ -193,15 +193,15 @@ export const STRINGS = {
     box: 'Box',
     over: 'Netz drüber',
     backfaces: 'Rückseiten',
-    panel: 'Leiste',
-    tip_background: 'Hintergrund: wie Orca (oder wie der Studio-Look), oder das Gegenteil (B)',
-    tip_edges: 'CAD-Kanten: die Linien, an denen zwei Flächen des Teils zusammentreffen',
+    panel: 'Seitenleiste',
+    tip_background: 'Nächster Hintergrund (B)',
+    tip_edges: 'CAD-Kanten: wo zwei Flächen zusammentreffen',
     tip_grid: 'Bodenraster (G)',
     tip_axes: 'Achsen X (rot), Y (grün), Z (blau) am Ursprung',
     tip_box: 'Umgebungsbox',
     tip_over: 'Zeichnet die Netzlinien über die geschlossene Fläche',
     tip_backfaces: 'Rückseiten der Flächen zeichnen',
-    tip_panel: 'Leiste ein- oder ausblenden (P)',
+    tip_panel: 'Seitenleiste ein- oder ausblenden (P)',
     quality: 'Netzqualität',
     q_coarse: 'Grob (schnell)',
     q_normal: 'Normal',
@@ -223,12 +223,12 @@ export const STRINGS = {
     invert: 'Umkehren',
     color_by_part: 'Farbe je Teil',
     tip_color_by_part: 'Jedes Teil in einer eigenen Farbe',
-    tip_tint_shading: 'Farbe je Teil zeigt sich nur im Look Original (Darstellung)',
+    tip_tint_shading: 'Farbe je Teil gibt es nur im Look Original',
     studio_unlit: 'Dieser Look ist unbeleuchtet: Studio-Lichter ändern hier nichts',
     studio_points_no_shadow: 'Punkte und Splats werfen keinen Schatten',
     tip_needs_selection: 'Wähle zuerst ein Teil',
     parts_hint: 'Klick ins Bild wählt ein Teil. Doppelklick auf eine Zeile zeigt nur dieses Teil. Eingerückte Zeilen gehören zur Baugruppe darüber.',
-    parts_more: '… und {n} weitere (Liste auf {max} begrenzt; „Alle“ / „Keine“ gilt für alle Teile).',
+    parts_more: '… und {n} weitere (Liste auf {max} begrenzt; die Knöpfe neben der Liste gelten für alle Teile).',
     visible_label: 'Sichtbar: {name}',
     part_n: 'Teil {n}',
     s_size: 'Dateigröße',
@@ -252,7 +252,7 @@ export const STRINGS = {
     u_foot: 'Fuß',
     u_micron: 'Mikrometer',
     u_kilometer: 'Kilometer',
-    preset: 'Ansicht',
+    preset: 'Blick',
     pv_all: 'Alles zeigen (R)',
     pv_hero: 'Hero',
     pv_iso: 'Isometrisch',
@@ -262,7 +262,7 @@ export const STRINGS = {
     pv_right: 'Rechts',
     pv_top: 'Oben',
     pv_bottom: 'Unten',
-    tip_preset: 'Kameraansichten: jede passt das ganze Modell ein (Tasten 1 bis 8, R zeigt alles)',
+    tip_preset: 'Blick wählen (Tasten 1 bis 8, R zeigt alles)',
     measure: 'Messen',
     tip_measure: 'Abstand zwischen zwei Punkten auf der Oberfläche messen (M)',
     measure_hint: 'Zwei Punkte auf der Oberfläche anklicken. Erneut klicken beginnt neu, Esc beendet.',
@@ -308,12 +308,12 @@ export const STRINGS = {
     s_name: 'Datei',
     loading: 'Lade {type} ({size}) …',
     toolbar_label: 'Werkzeugleiste',
-    side_title: 'Leiste',
-    side_close: 'Leiste schließen',
+    side_title: 'Seitenleiste',
+    side_close: 'Seitenleiste schließen',
     side_empty: 'Eine Datei öffnen, um hier Kennzahlen und Einstellungen zu sehen.',
     more: 'Mehr ▾',
     more_tip: 'Mehr: Ordner öffnen, alles zurücksetzen',
-    resizer_label: 'Leistenbreite ändern (Pfeiltasten; Doppelklick setzt zurück)',
+    resizer_label: 'Seitenleiste verbreitern (Pfeiltasten; Doppelklick: zurück)',
     waiting: 'Warte auf die Datei …',
     starting: 'Starte den Konverter …',
     reading: 'Lese die STEP-Datei … {s} s',
@@ -476,7 +476,7 @@ export function planUnit(detected) {
 // ---------- assembly tree ----------
 /** Turns the converter's node tree into list rows. A node with children (or several meshes) is an assembly row, its
  *  children and meshes are the rows below it, indented. A nameless wrapper node is skipped.
- *  rows: [{ depth, name, meshes: number[] (all meshes below), group: boolean }]. `meshNames[i]` names mesh i. */
+ *  rows: [{ depth, name, src: 'file' | 'ui' (who named it), meshes: number[] (all meshes below), group: boolean }]. `meshNames[i]` names mesh i. */
 export function buildRows(root, meshNames, partName) {
   const meshCount = meshNames.length
   const named = (s) => !!(s && String(s).trim())
@@ -487,7 +487,8 @@ export function buildRows(root, meshNames, partName) {
   }
   const rows = []
   let counter = 0
-  const label = (s) => (named(s) ? String(s).trim() : partName(++counter))
+  // a name the file gives is the file's (src 'file'); a "Part 3" the viewer makes up is its own (src 'ui'): the list says which, so that the honesty check can tell them apart
+  const lab = (s) => (named(s) ? { name: String(s).trim(), src: 'file' } : { name: partName(++counter), src: 'ui' })
   const emit = (c, depth) => {
     if (c.all.length === 0) return
     if (!named(c.node.name) && c.own.length === 0 && c.kids.length > 0) {
@@ -497,16 +498,16 @@ export function buildRows(root, meshNames, partName) {
     const hasKids = c.kids.some((k) => k.all.length > 0)
     const group = hasKids || c.own.length > 1
     if (c.own.length === 1 && !hasKids) {
-      rows.push({ depth, name: named(c.node.name) ? label(c.node.name) : label(meshNames[c.own[0]]), meshes: c.own.slice(), group: false })
+      rows.push({ depth, ...(named(c.node.name) ? lab(c.node.name) : lab(meshNames[c.own[0]])), meshes: c.own.slice(), group: false })
       return
     }
-    rows.push({ depth, name: label(c.node.name), meshes: c.all, group })
-    if (c.own.length > 1 || (c.own.length === 1 && hasKids)) for (const i of c.own) rows.push({ depth: depth + 1, name: label(meshNames[i]), meshes: [i], group: false })
+    rows.push({ depth, ...lab(c.node.name), meshes: c.all, group })
+    if (c.own.length > 1 || (c.own.length === 1 && hasKids)) for (const i of c.own) rows.push({ depth: depth + 1, ...lab(meshNames[i]), meshes: [i], group: false })
     for (const k of c.kids) emit(k, depth + 1)
   }
   emit(prep(root || {}), 0)
   const seen = new Set(rows.flatMap((r) => r.meshes))
-  for (let i = 0; i < meshCount; i++) if (!seen.has(i)) rows.push({ depth: 0, name: label(meshNames[i]), meshes: [i], group: false })
+  for (let i = 0; i < meshCount; i++) if (!seen.has(i)) rows.push({ depth: 0, ...lab(meshNames[i]), meshes: [i], group: false })
   return rows
 }
 
@@ -561,13 +562,6 @@ export function clipPlane(axis, t, min, max, flip) {
 export function measureInfo(a, b) {
   const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]]
   return { distance: Math.hypot(...d), delta: d }
-}
-
-/** Part indices whose label contains the query (case-insensitive, trimmed); an empty query keeps all. */
-export function filterIndices(labels, query) {
-  const q = String(query || '').trim().toLowerCase()
-  if (!q) return labels.map((_, i) => i)
-  return labels.flatMap((l, i) => (String(l).toLowerCase().includes(q) ? [i] : []))
 }
 
 /** Which view-space axis a file axis ends up on after the "up is" rotation, and whether it points the same way.

@@ -80,4 +80,7 @@ export const STUDIO_IDS = ['studio-sec', 'st-preset', 'st-bg', 'st-color', 'st-f
 export const PARTCARD_IDS = ['part-card', 'sel-chip']
 
 /** Built by chrome-layout.js (the toolbar's new buttons, the side tabs, the measuring bar). */
-export const CHROME_IDS = ['b-view', 'b-look', 'b-studio', 'b-viewall', 'b-viewfit', 'side-tabs', 'measure-bar', 'b-measure-clear', 'b-measure-done', 'b-folder-more', 'info-title', 'info-selected', 'stats-adv', 'stats-more', 'studio-anchor', 'pop-view', 'pop-look', 'pop-studio', 'st-bgmode', 'st-unlit', 'st-unlit-fix', 'b-film', 'st-foot', 'export-dialog', 'export-kind', 'b-export-close', 'b-ex-edit', 'b-shot-open', 'ex-adv', 'b-ex-go', 'b-ex-close2', 'ex-small', 'export-orig']
+export const CHROME_IDS = ['b-card-edit', 'b-cut-off', 'b-sel-clear', 'tree-wrap', 'tree-strip', 'card-files', 'b-files-open', 'b-files-close', 'file-row', 'b-view', 'b-open-bar', 'b-diag', 'b-front', 'b-cut', 'm-cut', 'status', 'status-slot', 'b-look', 'b-studio', 'b-viewall', 'b-viewfit', 'side-tabs', 'measure-bar', 'b-measure-clear', 'b-measure-done', 'b-folder-more', 'info-title', 'info-selected', 'stats-adv', 'stats-more', 'studio-anchor', 'pop-view', 'pop-look', 'pop-studio', 'st-bgmode', 'st-bg-swatches', 'st-bg-custom', 'st-bg-note', 'st-why', 'b-surf', 'b-mesh', 'm-studio', 'm-export', 'parts-cap', 'st-unlit', 'st-unlit-fix', 'b-film', 'st-foot', 'export-dialog', 'export-kind', 'b-ex-edit', 'b-shot-open', 'ex-adv', 'b-ex-go', 'b-ex-close2', 'ex-small', 'export-orig']
+
+/** Built by shell.js (the left column of the three-column layout). */
+export const SHELL_IDS = ['col-l']

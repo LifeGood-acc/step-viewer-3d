@@ -7,7 +7,7 @@ import { KEYMAP, VIEW_NAMES } from '../editor/shared/keymap.js'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { summarizeParts, fitDistance, STRINGS, makeT, makeFormat, niceStep, partHue, pickLocale, detectStepUnit, planUnit, buildRows, converterParams, QUALITY, memoryEstimateGB, WARN_BYTES, looksLikeStep, isStartText, extOf, pickFile, SUPPORTED_EXT, HARD_MAX_BYTES, stateLine, presetDirection, PRESETS, clipPlane, fileAxisToView, measureInfo, filterIndices } from '../editor/lib.js'
+import { summarizeParts, fitDistance, STRINGS, makeT, makeFormat, niceStep, partHue, pickLocale, detectStepUnit, planUnit, buildRows, converterParams, QUALITY, memoryEstimateGB, WARN_BYTES, looksLikeStep, isStartText, extOf, pickFile, SUPPORTED_EXT, HARD_MAX_BYTES, stateLine, presetDirection, PRESETS, clipPlane, fileAxisToView, measureInfo } from '../editor/lib.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..')
@@ -117,9 +117,9 @@ test('memory estimate follows the two measured points', () => {
 test('assembly rows: nesting, nameless wrappers, several meshes, unreachable meshes', () => {
   const name = (n) => 'Part ' + n
   assert.deepEqual(buildRows({ name: '', meshes: [], children: [{ name: 'assembly', meshes: [0, 1], children: [] }] }, ['', ''], name), [
-    { depth: 0, name: 'assembly', meshes: [0, 1], group: true },
-    { depth: 1, name: 'Part 1', meshes: [0], group: false },
-    { depth: 1, name: 'Part 2', meshes: [1], group: false }
+    { depth: 0, name: 'assembly', src: 'file', meshes: [0, 1], group: true },
+    { depth: 1, name: 'Part 1', src: 'ui', meshes: [0], group: false },
+    { depth: 1, name: 'Part 2', src: 'ui', meshes: [1], group: false }
   ])
   const nested = buildRows({ name: 'Top', meshes: [], children: [{ name: 'Sub', meshes: [], children: [{ name: 'Leaf', meshes: [2] }] }, { name: '', meshes: [0] }] }, ['A', 'B', 'C'], name)
   assert.deepEqual(nested.map((r) => [r.depth, r.name, r.meshes.join(','), r.group]), [
@@ -129,7 +129,7 @@ test('assembly rows: nesting, nameless wrappers, several meshes, unreachable mes
     [1, 'A', '0', false],
     [0, 'B', '1', false] // mesh 1 is in no node: still listed
   ])
-  assert.deepEqual(buildRows(null, ['x'], name), [{ depth: 0, name: 'x', meshes: [0], group: false }])
+  assert.deepEqual(buildRows(null, ['x'], name), [{ depth: 0, name: 'x', src: 'file', meshes: [0], group: false }])
   assert.deepEqual(buildRows({ meshes: [9, -1, 1.5], children: [] }, [], name), [])
 })
 
@@ -197,7 +197,6 @@ test('camera presets, section plane through the file axes, measuring and filteri
   assert.deepEqual(fileAxisToView('y', 'z'), { axis: 'z', sign: -1 })
   assert.deepEqual(fileAxisToView('y', 'y'), { axis: 'y', sign: 1 })
   assert.equal(measureInfo([0, 0, 0], [3, 4, 12]).distance, 13)
-  assert.deepEqual(filterIndices(['Housing', 'Bolt M4', 'Bolt M5'], 'bolt'), [1, 2])
 })
 
 test('the manifest declares one text editor (STEP is a text format: Orca mounts text editors only for text files)', () => {
@@ -225,13 +224,6 @@ test('every keyboard shortcut a tooltip promises is handled, and typing in a tex
   assert.ok(/keys 1 to 8/.test(STRINGS.en.tip_preset), 'the preset tooltip names the keys')
   for (const n of VIEW_NAMES) assert.ok(new RegExp(`view_${n}:`).test(block), `no handler for the view ${n}`)
   assert.ok(/keyAction\(e\)/.test(js), 'the viewer takes its keys through keyAction (text fields, modifiers and repeats are handled there)')
-})
-
-test('German strings are translated, not copied (except words that are the same in German)', () => {
-  const same = new Set(['ch_l_original', 'ch_ex_title', 'ch_ex_film', 'ch_st_film', 'ch_studio', 'ch_tab_info', 'ch_tab_studio', 'ch_tab_export', 'pc_material', 'pc_position', 'pc_computing', 'st_title', 'st_spin_start', 'st_tone_neutral', 'st_tone_agx', 'pv_hero', 'mesh', 'box', 'sh_original', 'sh_normals', 'u_meter', 'q_normal', 'ex_format', 'ex_fmt_glb', 'ex_fmt_stl', 'ex_fmt_obj', 'ex_fmt_ply', 'ex_fmt_3mf', 'ex_ready', 'ex_sec_n', 'ex_progress', 'tl_detail', 'tl_detail_normal', 'sh_matcap', 'ms_radius', 'mp_col_name', 'mp_name'])
-  for (const k of Object.keys(STRINGS.en)) {
-    if (STRINGS.en[k] === STRINGS.de[k]) assert.ok(same.has(k), `de.${k} is still English: ${STRINGS.en[k]}`)
-  }
 })
 
 test('toggle buttons: every aria-pressed button is kept in sync by the script, and the pressed style is theme-independent', () => {

@@ -74,7 +74,7 @@ const diff = (a, b, by = 20) => ev(`(() => { const A = window.__f[${JSON.stringi
 const key = (k) => ev(`window.dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(k)}, bubbles: true }))`)
 const press = (id) => ev(`document.getElementById(${JSON.stringify(id)}).click()`)
 const sleepFrame = () => sleep(150)
-const card = () => ev(`(() => { const c = document.getElementById('part-card'); if (!c || c.hidden) return null; return { name: c.querySelector('.pc-name').textContent, rows: Object.fromEntries([...c.querySelectorAll('dt')].map((dt) => [dt.textContent, dt.nextElementSibling.textContent])), text: c.textContent } })()`)
+const card = () => ev(`(() => { const c = document.getElementById('part-card'); if (!c || c.hidden) return null; const rows = Object.fromEntries([...c.querySelectorAll('dt')].map((dt) => [dt.textContent, dt.nextElementSibling.textContent])); const dd = [...c.querySelectorAll('#pc-dims-kv dd')].map((x) => x.textContent); rows['Size X × Y × Z'] = dd.join(' × '); return { name: c.querySelector('.pc-name').textContent, rows, text: c.textContent, cards: [...c.querySelectorAll(':scope > .card')].map((x) => x.id), volume: (document.getElementById('pc-vol-big') || {}).textContent } })()`)
 const chip = () => ev(`(() => { const c = document.getElementById('sel-chip'); return c && !c.hidden ? c.textContent : null })()`)
 // the list rows by name; a click as a person would make it, with modifiers
 const clickRow = (i, mods = {}) => ev(`(() => { const r = document.querySelector('.part[data-i="${i}"]'); r.dispatchEvent(new MouseEvent('click', { bubbles: true, ...${JSON.stringify(mods)} })) })()`)
@@ -112,7 +112,7 @@ try {
   const dims0 = nums(c.rows['Size X × Y × Z']).slice(0, 3)
   check(dims0.length === 3 && dims0.every((v, i) => Math.abs(v - b0.size[i]) <= 0.006 * Math.max(1, b0.size[i])), `one part: the size ${dims0} is the box of the part (${b0.size.map((v) => v.toFixed(3))})`)
   check(Number(c.rows['Triangles'].replace(/[^\d]/g, '')) === b0.tris, `one part: the triangles (${c.rows['Triangles']})`)
-  check(/%/.test(c.rows['Share of the model']), 'one part: the share of the model')
+  check(/%/.test(c.rows['Share of the triangles']), 'one part: the share of the triangles')
   check((await chip()) && /×/.test(await chip()), `one part: the chip in the view names the part and its size ("${await chip()}")`)
   check(await ev(`(() => { const hs = window.__h.scene.children.find((o) => o.isGroup && o.children.some((c) => c.isLineSegments && c.material.isLineDashedMaterial)); return !!hs })()`), 'one part: a dashed frame is drawn around it')
   // ----- STEP: a node of the tree selects every part below it, the card is named like the node
@@ -135,15 +135,78 @@ try {
   await clickRow(L[1])
   await sleepFrame()
   check(await ev(`!document.querySelector('#part-card details').open`), 'more is folded')
-  await ev(`(() => { const d = document.querySelector('#part-card details'); d.open = true; d.dispatchEvent(new Event('toggle')) })()`)
+  check((await card()).cards.join() === 'pc-info,pc-dims,pc-vol' + (isStep ? ',pc-weight' : ''), `the cards: part information, dimensions, volume${isStep ? ', weight (STEP only)' : ''} (${(await card()).cards})`)
+  // the "?" of a card: the explanation is hidden to begin with, the short line of where the numbers come from stays; an open "?" stays open (and keeps the focus) when another part is chosen
+  const helpState = () => ev(`(() => { const b = document.getElementById('pc-dims-help'); const n = b && document.getElementById(b.getAttribute('aria-controls').split(' ')[0]); const src = document.querySelector('#pc-dims .dims-src'); return b ? { open: b.getAttribute('aria-expanded'), noteHidden: n ? n.hidden : null, srcShown: !!src && src.getClientRects().length > 0, name: b.getAttribute('aria-label'), focus: document.activeElement === b } : null })()`)
+  let hs = await helpState()
+  check(hs && hs.open === 'false' && hs.noteHidden === true && hs.srcShown && /: /.test(hs.name), `the "?" of Dimensions: closed, the explanation hidden, a short line says where the sizes come from (${JSON.stringify(hs)})`)
+  await ev(`document.getElementById('pc-dims-help').focus(); document.getElementById('pc-dims-help').click()`)
+  hs = await helpState()
+  check(hs.open === 'true' && hs.noteHidden === false, 'the "?" of Dimensions opens the explanation')
+  await clickRow(L[2])
+  await sleepFrame()
+  hs = await helpState()
+  check(hs && hs.open === 'true' && hs.noteHidden === false && hs.focus, `another part chosen: the "?" stays open and keeps the focus (${JSON.stringify(hs)})`)
+  await ev(`document.getElementById('pc-dims-help').click()`)
+  await clickRow(L[1])
+  await sleepFrame()
+  // the volume and the surface are worked out by themselves now (the card Volume), "More about the part" holds the rest
   await waitFor(`(() => { const dd = [...document.querySelectorAll('#part-card dt')].find((x) => x.textContent === 'Surface'); return dd && /\\d/.test(dd.nextElementSibling.textContent) })()`, 20000, 'the surface of the part')
+  await ev(`(() => { const d = document.querySelector('#part-card details'); d.open = true; d.dispatchEvent(new Event('toggle')) })()`)
   c = await card()
-  check(/\d/.test(c.rows['Surface']) && c.rows['Watertight'] !== undefined && c.rows['Volume'] !== undefined, `more: surface, volume and the check arrive (${c.rows['Surface']}, ${c.rows['Volume']}, ${c.rows['Watertight']})`)
+  check(/\d/.test(c.rows['Surface']) && c.rows['Watertight'] !== undefined && /\d|–/.test(c.volume), `surface, volume and the check arrive without opening More (${c.rows['Surface']}, ${c.volume}, ${c.rows['Watertight']})`)
   // independent: the area of the part from its triangles
   const m1 = (await meshesOf(L[1]))[0]
   const area = await ev(`(async () => { const { parts } = window.__h; const THREE = await import('three'); const o = parts[${m1}].obj; o.updateWorldMatrix(true, false); const g = o.geometry; const pos = g.getAttribute('position'); const idx = g.index; const n = idx ? idx.count : pos.count; const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(); let s = 0; for (let i = 0; i < n; i += 3) { const [i0, i1, i2] = idx ? [idx.getX(i), idx.getX(i + 1), idx.getX(i + 2)] : [i, i + 1, i + 2]; a.fromBufferAttribute(pos, i0).applyMatrix4(o.matrixWorld); b.fromBufferAttribute(pos, i1).applyMatrix4(o.matrixWorld); c.fromBufferAttribute(pos, i2).applyMatrix4(o.matrixWorld); s += b.clone().sub(a).cross(c.clone().sub(a)).length() / 2 } return s })()`)
   const shownArea = nums(c.rows['Surface'])[0]
   check(Math.abs(shownArea - area) <= 0.03 * area, `more: the surface ${c.rows['Surface']} agrees with the triangles (${area.toFixed(3)})`)
+
+  // ----- Volume (E3): the number of the card agrees with the triangles; the weight is an estimate that is only there on request (STEP only)
+  const vol = await ev(`(async () => { const { parts } = window.__h; const THREE = await import('three'); const o = parts[${m1}].obj; o.updateWorldMatrix(true, false); const g = o.geometry; const pos = g.getAttribute('position'); const idx = g.index; const n = idx ? idx.count : pos.count; const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(); let s = 0; for (let i = 0; i < n; i += 3) { const [i0, i1, i2] = idx ? [idx.getX(i), idx.getX(i + 1), idx.getX(i + 2)] : [i, i + 1, i + 2]; a.fromBufferAttribute(pos, i0).applyMatrix4(o.matrixWorld); b.fromBufferAttribute(pos, i1).applyMatrix4(o.matrixWorld); c.fromBufferAttribute(pos, i2).applyMatrix4(o.matrixWorld); s += a.dot(b.clone().cross(c)) / 6 } return Math.abs(s) })()`)
+  const volText = (await card()).volume
+  const shownVol = nums(volText)[0]
+  if (/\d/.test(volText)) check(Math.abs(shownVol - vol) <= 0.03 * vol, `volume: the card shows ${volText} for a mesh of ${vol.toFixed(3)}`)
+  else check(volText === '–', `volume: skipped the number, the part has no closed mesh ("${volText}"): no number is invented`)
+  const hasW = await ev(`!!document.getElementById('pc-weight')`)
+  check(hasW === isStep, `the card "Estimate the weight" exists in the STEP viewer only (${hasW})`)
+  if (isStep) {
+    const w0 = await ev(`(() => ({ dens: document.getElementById('pc-dens').value, res: !!document.getElementById('pc-w-res'), text: document.getElementById('pc-weight').textContent }))()`)
+    check(w0.dens === '' && !w0.res && !/≈/.test(w0.text) && /No assumption/.test(await ev(`document.getElementById('pc-dens').options[0].textContent`)), 'weight: default is "No assumption", no estimate on screen')
+    if (/\d/.test(volText)) {
+      await ev(`(() => { const s = document.getElementById('pc-dens'); s.value = 'steel'; s.dispatchEvent(new Event('change', { bubbles: true })) })()`)
+      await sleepFrame()
+      const w1 = await ev(`(() => { const r = document.getElementById('pc-w-res'); return r ? { text: r.textContent, mark: !!r.querySelector('.tag.est'), markText: (r.querySelector('.tag.est') || {}).textContent, big: r.querySelector('.big').textContent, src: r.querySelector('.big [data-src]').dataset.src } : null })()`)
+      const grams = nums(w1.big)[0] * (/kg/.test(w1.big) ? 1000 : 1)
+      const expect = (vol / 1000) * 7.85 // mm³ → cm³ × g/cm³ (the sample is in millimetres)
+      check(w1 && w1.mark && w1.markText === 'Estimate' && /^≈/.test(w1.big) && w1.src === 'estimate', `weight: with steel chosen the estimate carries its mark and "≈" (${w1 && w1.big})`)
+      check(Math.abs(grams - expect) <= 0.05 * expect + 0.6, `weight: ${w1.big} is the mesh volume ${vol.toFixed(1)} mm³ × 7.85 g/cm³ (${expect.toFixed(2)} g)`)
+      await clickRow(L[0])
+      await sleepFrame()
+      check((await ev(`document.getElementById('pc-dens').value`)) === '' && !(await ev(`!!document.getElementById('pc-w-res')`)), 'weight: a new selection forgets the density (no assumption again)')
+      await clickRow(L[1])
+      await sleepFrame()
+    }
+  }
+
+  // copying the numbers carries the volume and the surface (they moved into their own card); never the estimate
+  const copied = await ev(`window.__h.partCard.rows().map((r) => r[0] + '=' + r[1]).join('|')`)
+  check(/Volume=/.test(copied) && /Surface=/.test(copied) && !/≈|Estimate/.test(copied), `copy: the numbers include volume and surface, not the estimate (${copied.slice(0, 90)})`)
+  if (isStep) {
+    await ev(`(() => { const s = document.getElementById('pc-dens'); s.value = 'steel'; s.dispatchEvent(new Event('change', { bubbles: true })) })()`)
+    await sleepFrame()
+    await key('Escape')
+    await sleepFrame()
+    await clickRow(L[1])
+    await sleepFrame()
+    check((await ev(`document.getElementById('pc-dens').value`)) === '' && !(await ev(`!!document.getElementById('pc-w-res')`)), 'weight: deselect and select again forgets the density too')
+    // A, B, A quickly: the result of A is not lost when B came in between
+    await clickRow(L[0])
+    await clickRow(L[1])
+    await clickRow(L[0])
+    await clickRow(L[1])
+    await waitFor(`(() => { const b = document.getElementById('pc-vol-big'); return !!b && b.textContent !== '…' })()`, 20000, 'the volume after A, B, A, B')
+    check(true === (await ev(`!/…/.test(document.getElementById('pc-vol-big').textContent)`)), 'a quick A, B, A, B selection does not leave the volume on "…"')
+  }
 
   // ----- several parts: Ctrl/Cmd adds, Shift takes a range, a click without modifier starts again
   await clickRow(L[0])

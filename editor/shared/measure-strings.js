@@ -69,7 +69,7 @@ export const MEASURE_STRINGS = {
     mp_finish_chain_tip: 'Ends the chain (Enter)',
     mp_close_chain: 'Close, with area',
     mp_close_chain_tip: 'Joins the last point to the first and shows the area',
-    close_text_measures: 'You have {n} measurements. Copy them from the Measure tab first if you need them.'
+    close_text_measures: 'You have {n} measurements. Copy them from the Measurements tab first if you need them.'
   },
   de: {
     ms_bundle: 'Kein Platz für: {list}',
@@ -139,7 +139,7 @@ export const MEASURE_STRINGS = {
     mp_finish_chain: 'Kette beenden',
     mp_finish_chain_tip: 'Schließt die Kette ab (Eingabe)',
     mp_close_chain: 'Schließen, mit Fläche',
-    mp_close_chain_tip: 'Verbindet den letzten Punkt mit dem ersten und zeigt die Fläche',
-    close_text_measures: 'Es gibt {n} Messungen. Bei Bedarf zuerst im Reiter Messen kopieren.'
+    mp_close_chain_tip: 'Letzten Punkt mit dem ersten verbinden, zeigt die Fläche',
+    close_text_measures: 'Es gibt {n} Messungen. Bei Bedarf zuerst im Reiter Messungen kopieren.'
   }
 }

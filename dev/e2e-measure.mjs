@@ -114,14 +114,12 @@ try {
   await open(modelFile)
   await frames(3)
 
-  // ----- the tab
+  // ----- the tab: it is not there before the first measurement (the toolbar button measures), then it says how many
   const tabs = await ev(`[...document.querySelectorAll('#side-tabs .tab')].filter((b) => !b.hidden).map((b) => b.textContent)`)
-  check(tabs.includes('Measure') && tabs.indexOf('Measure') < tabs.indexOf('Info'), `a tab "Measure" before Info (${tabs})`)
-  await ev(`window.__h.chrome.tabs.select('measure')`)
-  check(await ev(`!document.getElementById('measure-empty').hidden && document.getElementById('measure-list').hidden`), 'Measure tab, empty: a sentence and a button, no list')
+  check(!tabs.some((x) => /Measure/.test(x)), `no measuring tab before the first measurement (${tabs})`)
   check(await ev(`!/measure/i.test(document.getElementById('tp-info').textContent.replace(/Measure the whole/, ''))`), 'nothing of the measuring list is in the Info tab (one place per function)')
-  await press('b-ms-start')
-  check(await ev(`document.getElementById('b-measure').getAttribute('aria-pressed') === 'true'`), 'the empty tab can start measuring')
+  await press('b-measure')
+  check(await ev(`document.getElementById('b-measure').getAttribute('aria-pressed') === 'true'`), 'the toolbar button starts measuring')
   await press('b-measure-done')
 
   // ----- a distance, by clicks: the label stands on the line, semi-transparent, in the view
@@ -150,6 +148,8 @@ try {
   await shot('01-label')
 
   // ----- the list
+  const tabsAfter = await ev(`[...document.querySelectorAll('#side-tabs .tab')].filter((b) => !b.hidden).map((b) => b.textContent)`)
+  check(tabsAfter.includes('Measurements 1') && tabsAfter.indexOf('Measurements 1') < tabsAfter.indexOf('Info'), `the first measurement makes a tab "Measurements 1" before Info (${tabsAfter})`)
   await ev(`window.__h.chrome.tabs.select('measure')`)
   check((await ev(`document.querySelectorAll('#measure-list .mrow').length`)) === 1 && /Distance/.test(await ev(`document.querySelector('#measure-list .mrow').textContent`)), 'the list has a row: number, kind, value')
   await setCtl('ms-name', 'Rod')
@@ -266,6 +266,7 @@ try {
   check((await ev(`(window.__h.measure.draft() || {}).count`)) === 1 && JSON.stringify(await ev(`window.__h.measure.store.list()[0].pts[1]`)) === JSON.stringify(old), 'measuring: a click on an old marker starts a new point, it does not grab the marker')
   await ev(`document.querySelector('#measure-bar [data-mode="chain"]').click()`) // another way to measure drops the unfinished one
   await press('b-measure-done')
+  await ev(`window.__h.chrome.tabs.select('measure')`) // the markers can be picked while the Measurements tab is open (it went away and came back with the measurements)
   await page(`const s = window.__h.measure.store; s.select(null); const m = s.list()[0]; const p = q.toScreen(q.toWorld(m.pts[0])); q.click(p.x, p.y)`)
   check((await ev(`window.__h.measure.store.selected()`)) === (await ev(`window.__h.measure.store.list()[0].id`)), 'not measuring: a click on a marker selects its measurement')
   await press('b-measure')
@@ -363,6 +364,8 @@ try {
   await ev(`[...document.querySelectorAll('#confirm button')].find((b) => /delete all/i.test(b.textContent)).click()`)
   await frames(2)
   check((await count()) === 0 && (await labels()).length === 0 && (await ev(`!document.getElementById('measure-empty').hidden`)), 'delete all: asked first, then list, labels and markers are gone')
+  check(!(await ev(`[...document.querySelectorAll('#side-tabs .tab')].filter((b) => !b.hidden).map((b) => b.textContent)`)).some((x) => /Measurements/.test(x)) && (await ev(`window.__h.chrome.tabs.current()`)) !== 'measure', 'delete all: the Measurements tab goes away again and another tab is shown')
+  check((await ev(`document.activeElement && document.activeElement.id`)) === 'b-measure', `delete all: the keyboard focus lands on the Measure button, not on the page (${await ev(`document.activeElement && (document.activeElement.id || document.activeElement.tagName)`)})`)
   check((await ev(`window.__h.renderer.render(window.__h.scene, window.__h.camera), window.__h.measure.labelCount()`)) === 0, 'after the last measurement is gone no label is kept for a picture')
 
   // ----- explode hides them (model viewer with several parts only): skipped when the file has one part

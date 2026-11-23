@@ -4,7 +4,7 @@ Open a STEP CAD file (`.step`, `.stp`) in Orca's editor tab and look at it: asse
 visibility, surface or mesh, mesh quality, and size and unit read from the file. The CAD kernel runs **in a background worker,
 offline, with no permissions**.
 
-![A small assembly, with the parts list and details](docs/images/parts-light.png)
+![A small assembly: the part tree on the left, the cards of the selected part on the right](docs/images/parts-light.png)
 
 STEP files hold exact surfaces (B-rep), not triangles. This plugin turns them into triangles with
 [occt-import-js](https://github.com/kovacsv/occt-import-js), a WebAssembly build of OpenCascade, and draws them with
@@ -13,18 +13,18 @@ three.js. For STL, 3MF, GLB, PLY and OBJ files use the companion plugin **3D Mod
 ## What you can do
 
 - **Look around**: drag to orbit, right-drag or Shift-drag to pan, scroll to zoom (towards the cursor). The **View** menu (or `R`)
-  shows everything again. Background like Orca or the opposite (`B`), **Surface | Mesh** (`W`), grid (`G`), axes, bounding box, **mesh over the surface** (Appearance > Advanced), backfaces.
+  shows everything again. **Surface | Mesh** (`W`), grid (`G`), axes, bounding box, **mesh over the surface** (Appearance > Advanced), backfaces.
 - **Parts**: assemblies and parts as an indented list with a checkbox, color swatch and triangle count. Click a part in the
   view to select it, double-click a row to show only that part, **All / None / Invert** change everything, **Color by part**
   gives each part its own color. Colors stored in the STEP file (per part and per face) are shown.
-- **Edges**: the *Edges* button draws the CAD edges, the lines where two faces of a part meet (made from the converter's face ranges the first time you switch it on; a smooth fillet shows its seams, a flat face shows no triangulation lines). They follow the section plane. A tool that only moves, scales or converts the model keeps them (they are children of the parts); a tool that replaces the triangles (Decimate) makes the edges of those parts again as sharp edges (over 30 degrees), because their faces are not known any more, and says so. A part with more than 6 million triangles gets no edges.
+- **Edges**: *Show edges* (Appearance menu, on by default) draws the CAD edges, the lines where two faces of a part meet (made from the converter's face ranges the first time you switch it on; a smooth fillet shows its seams, a flat face shows no triangulation lines). They follow the section plane. A tool that only moves, scales or converts the model keeps them (they are children of the parts); a tool that replaces the triangles (Decimate) makes the edges of those parts again as sharp edges (over 30 degrees), because their faces are not known any more, and says so. A part with more than 6 million triangles gets no edges.
 - **Assembly tree**: a group row has a fold button (▾ / ▸, reachable by keyboard) that hides its rows; a filter ignores the folds, and selecting a part in the view unfolds the groups above its row. The group's checkbox shows or hides the whole subtree.
 - **View menu** (select or keys `1` to `8`, every view fits the whole model), **section plane** along the file's X, Y or Z with a slider, **measuring** of the
   distance between two surface points (`M`), **shading** (original, solid gray, normals), **opacity**, a **filter** box for long part
-  lists, and **Save image** (PNG through Orca's save dialog) and **Export…** (a copy as GLB, STL, OBJ, PLY or 3MF, see below).
-![In a narrow tab the panel is a sheet under the view](docs/images/narrow.png)
+  lists, and **Save image…** (in the Studio menu; PNG through Orca's save dialog) and **Export…** (a copy as GLB, STL, OBJ, PLY or 3MF, see below).
+![In a narrow tab the toolbar keeps its symbols and the sidebar is a sheet under the view](docs/images/narrow.png)
 
-- **Layout**: a toolbar with six elements on top (*View*, *Surface | Mesh* with *Appearance*, *Measure*, *Studio*, *Export…*, and *More*); the panel has the tabs *Parts*, *Section*, *Measure*, *Info* and *Edit*. Also: toolbar on top, view and panel next to each other. Drag the panel's edge to resize it (arrow keys too, double-click resets), fold sections one by one, close it with the button or `P`; all of it is remembered. In a narrow tab or the sidebar (under 520 px) the panel is a sheet under the view and less used buttons are in the **More** menu.
+- **Layout**: a toolbar on top with a symbol in front of every word (*View*, *Surface | Mesh* with *Appearance*, *Measure*, *Section*, *Studio*, *Export…* and *More*; from 1300 px also *Open*, *Diagonal*, *Front*; the words give way to the symbols when the window is narrow) and a status bar at the bottom with the sidebar button and the numbers of the view (triangles, parts, grid step, zoom), an orientation cube and a scale bar in the view; from 1200 px the sidebar is two columns of cards around the view (*Files* and the *Part tree* on the left; *Section* while a plane is on, *Measurements*, the part cards *Part information*, *Dimensions*, *Volume*, *Estimate the weight* (on request, only where the file states its unit), *Model* and a folded *Edit* on the right); below 1200 px it is one column with the tabs *Parts*, *Section*, *Info* and *Edit* (and *Measurements n* from the first measurement on; a file starts on *Parts* or *Info*, never on an empty tab). Drag the panel's edge to resize it (arrow keys too, double-click resets), fold sections one by one, close it with the button or `P`; all of it is remembered. In a narrow tab or the sidebar (under 520 px) the panel is a sheet under the view and what does not fit on the toolbar even as a symbol (*Studio*, *Export…*, *Section*) is in the **More** menu, which has three groups: files · shortcuts · reset.
 - **Mesh quality**: *Coarse*, *Normal* or *Fine*. Changing it reads the file again.
 - **Details**: number of parts, B-rep faces, triangles, size along X, Y and Z, height range, grid step, unit, read time and
   the converter's memory.
@@ -41,7 +41,7 @@ You do not need a file in the workspace. Three ways to get an empty viewer that 
 
 - **Sidebar panel "STEP"** (right sidebar): always available, shows the start page.
 - **New file → "STEP Viewer (drop a model)"** (the + menu of the tab bar or the command palette): opens a tab with the start page.
-- Any open viewer tab: **Open file…** in the toolbar, or just drop a file onto the view.
+- Any open viewer tab: **Open** in the toolbar (from 1300 px) or in the *Files* card, or just drop a file onto the view.
 
 On the start page drag a model in from Finder or any folder, or press **Choose file…**. Files one after another replace the view.
 Dropped files are read by the browser's File API, so Orca's 50 MB limit for files it hands to an editor does **not** apply. What limits STEP
@@ -87,8 +87,8 @@ The triangles are the converter's mesh at the quality you chose, so a finer qual
 
 ## Edit: change the working copy
 
-The **Edit** tab of the panel changes the model that is on screen, the *working copy*; the file on disk is never touched and
-nothing is saved by a tool. **Export** then writes the working copy, so the Edit tab and export work together. **Back to the file**
+The **Edit** card of the sidebar (the **Edit** tab below 1200 px) changes the model that is on screen, the *working copy*; the file on disk is never touched and
+nothing is saved by a tool. **Export** then writes the working copy, so Edit and export work together. **Back to the file**
 undoes everything. After a tool the panel shows the size and triangle numbers before and after (and, for the ones that change the
 shape, two small pictures). A 3MF that is written afresh contains no slicer data (painted colors, profiles, plates); a copy as 3MF is written afresh from the triangles (the formats are written, not read here).
 
@@ -103,21 +103,21 @@ The compressor, the mesh tools and the measuring are the same code as in the com
 
 - **Shading**: original, solid gray, normals, **X-ray**, **matcap**, **flat** and **vertex colors** (per-face colors of the STEP file).
 - **Measure** has four ways (the *Measure* button or `M`): distance, **angle** (three points), **circle diameter** (three points on the rim of a hole) and **edge length**: a CAD edge (where two faces of the part meet), a straight edge measured end to end; a curved edge gives the piece between two mesh points, a chord. Results are in the model's unit.
-- **Measure+** (0.22.0): measurements stay. Each has a label on its line (value, name), the *Measure* tab lists them (rename, colour, hide, delete, change a point by dragging its marker or *Set again*), **Chain** measures several points in a row (pieces, sum, area when closed), two ticked measurements are compared (difference, ratio), *Copy as text* / *Copy as CSV*, the labels are drawn into saved pictures, and *Close file* names them. Tests: `shared-measure-store.test.mjs` (known cube, 3-4-5 triangle, 3 × 4 rectangle) and `dev/e2e-measure.mjs`.
-- **Details**: *Watertight*, *Volume* and *Surface area* appear a moment after the model is up; **Copy details** puts the rows on the clipboard as text.
+- **Measure+** (0.22.0): measurements stay. Each has a label on its line (value, name), the *Measurements* tab (it appears with the first one) lists them (rename, colour, hide, delete, change a point by dragging its marker or *Set again*), **Chain** measures several points in a row (pieces, sum, area when closed), two ticked measurements are compared (difference, ratio), *Copy as text* / *Copy as CSV*, the labels are drawn into saved pictures, and *Close file* names them. Tests: `shared-measure-store.test.mjs` (known cube, 3-4-5 triangle, 3 × 4 rectangle) and `dev/e2e-measure.mjs`.
+- **Details**: *Watertight*, *Volume* and *Surface area* appear a moment after the model is up; **Copy numbers** puts the rows on the clipboard as text.
 
 ## Studio look (0.9.0)
 The *Studio* menu (key `L` switches it on and off) turns the view into a small photo studio, for product pictures and turntable films. **Original** is the default and leaves everything as it always was. Presets: *Product on white*, *Dark studio*, *Grey gradient*, *Soft daylight*; every value can be changed (then the look reads *Custom*) and is remembered; *Reset the look* (or *Reset settings*) goes back to the original.
-- **Background**: one colour (also your own), a gradient, or transparent (shown as a checkerboard; PNG keeps the alpha).
+- **Background** (top of the *Studio* menu, always usable, key `B` steps through them): Orca's own, white, a gradient, transparent (shown as a checkerboard; PNG keeps the alpha) or your own colour.
 - **Floor with soft shadow**: an invisible floor at the model's lowest point that only catches shadows (a key-light shadow plus a wide soft one straight above), strength adjustable. In a transparent PNG the shadow stays as partial transparency.
 - **Lights**: key, fill and rim light with strength, side angle and height; **reflections** from a procedural photo-studio room (no picture is loaded, nothing from the network) so metal and glossy materials look right; **exposure** and **tone mapping** (neutral, ACES, AgX).
 - **Camera** presets for product shots (3/4 view, front, top, hero) and a **turntable** (the model turns under fixed lights; start and stop, speed in degrees per second).
 - **Export**: PNG as shown, 2× or 4× the view (or 1920 / 3840 px) and the WebM turntable film (length 4/8/15 s, size as shown, 1280 or 1920 px) use the studio look.
 - **Speed**: shadows and reflections only exist while the look is on. Meshes up to 1 million triangles redraw their shadow every frame, up to 3 million only when something changes (a note says so), above that and for point clouds and splats there is no shadow (a note says so). *Quality* low/high sets the shadow map size and softness. Measured with the same test as in the 3D Model Viewer (a UV sphere, up to 2.25 million triangles): the studio look did not slow drawing down (`dev/e2e-studio.mjs --perf`).
 
-**Part info.** Select parts (click, Ctrl/Cmd click, Shift click in the list, Esc clears; the **Select several** button makes every click add a part, for a trackpad or touch): the *part card* in the Parts tab and a chip in the view give the size, triangles and share of the model; *More about the part* adds surface, volume, the mesh check, material, position and instance; two parts also give the distance between them. *Measure > Parts* measures the distance of two parts in the view.
+**Part info.** Select parts (click, Ctrl/Cmd click, Shift click in the list, Esc clears; the **Select several** button makes every click add a part, for a trackpad or touch): the part cards (*Part information*, *Dimensions*, *Volume*; in the *Parts* tab below 1200 px) and a chip in the view give the size, triangles and share of the model; *More about the part* adds surface, volume, the mesh check, material, position and instance; two parts also give the distance between them. *Measure > Parts* measures the distance of two parts in the view.
 
-**Close.** The *Close* button (next to *Open file…*) empties the view and goes back to the start page; it asks first and forgets the kept last file.
+**Close.** The ✕ on the file in the *Files* card (*Close file*) empties the view and goes back to the start page; it asks first and forgets the kept last file.
 
 ## Keyboard
 
@@ -160,7 +160,7 @@ Shortcuts are ignored while you type in the part filter. The section plane and t
   warns with a rough memory figure and asks before reading.
 - Only solids and surfaces are drawn: no PMI/annotations, no product structure beyond names, no curves or points.
 - IGES and BREP files are not opened by this plugin (only `.step` / `.stp`).
-- The Edit tab changes a working copy; the viewer never writes to the STEP file; it only offers copies (GLB, STL, OBJ, PLY, 3MF, PNG, WebM) through Orca's Save dialog after a click. There is no export back to STEP.
+- Edit changes a working copy; the viewer never writes to the STEP file; it only offers copies (GLB, STL, OBJ, PLY, 3MF, PNG, WebM) through Orca's Save dialog after a click. There is no export back to STEP.
 - Desktop app only (`frame: isolated`); in a browser client the file opens in the normal editor.
 
 ## Install
@@ -194,7 +194,7 @@ plugin frames forbid), reproducible with `dev/patch-occt.mjs` from the original 
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). To use your own build, build occt-import-js from source and overwrite those two files. Source locations, versions, license texts and the exact
 steps are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [licenses/](licenses/).
 
-**Source code of the LGPL parts:** the exact upstream versions (occt-import-js tag 0.0.23, OCCT commit `d2abb6d844231cb8f29be6894440874a4700e4a5`) are pinned in THIRD_PARTY_NOTICES.md; `sh dev/fetch-lgpl-source.sh` builds the corresponding-source archive, which is also attached to every release of this repository (SHA-256 of the archive attached to the releases, built for 0.25.1 and unchanged for 0.25.2: `ea1d1620984ec60bf36f9e38aaaf7f57713eca7628f2e7aaafeb75331e99d18b`), and a written offer for it (through the issues of this repository, no e-mail needed) is in THIRD_PARTY_NOTICES.md.
+**Source code of the LGPL parts:** the exact upstream versions (occt-import-js tag 0.0.23, OCCT commit `d2abb6d844231cb8f29be6894440874a4700e4a5`) are pinned in THIRD_PARTY_NOTICES.md; `sh dev/fetch-lgpl-source.sh` builds the corresponding-source archive, which is also attached to every release of this repository (SHA-256 of the archive attached to the releases, built for 0.25.1 and unchanged since: `ea1d1620984ec60bf36f9e38aaaf7f57713eca7628f2e7aaafeb75331e99d18b`), and a written offer for it (through the issues of this repository, no e-mail needed) is in THIRD_PARTY_NOTICES.md.
 
 ## Development
 

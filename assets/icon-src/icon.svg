@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>STEP Viewer 3D</title>
+  <rect width="256" height="256" rx="56" fill="#C2410C"/>
+  <rect x="2" y="2" width="252" height="252" rx="54" fill="none" stroke="#FFFFFF" stroke-opacity="0.25" stroke-width="4"/>
+  <polygon points="42,112 128,64 214,112 128,160" fill="#FFFFFF"/>
+  <polygon points="42,112 128,160 128,208 42,160" fill="#FFFFFF" fill-opacity="0.8"/>
+  <polygon points="128,160 214,112 214,160 128,208" fill="#FFFFFF" fill-opacity="0.55"/>
+  <ellipse cx="128" cy="112" rx="30" ry="17" fill="#C2410C"/>
+</svg>

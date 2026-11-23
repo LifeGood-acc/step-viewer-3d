@@ -88,5 +88,7 @@ export const SHORTCUT_ROWS = [
   { keys: '+  /  −', actions: ['zoom_in', 'zoom_out'], text: 'ch_k_zoom' },
   { keys: 'Esc', actions: ['escape'], text: 'ch_k_escape' },
   { keys: 'Ctrl / ⌘ + Click', actions: [], text: 'ch_k_multi' },
-  { keys: '⇧ + Click', actions: [], text: 'ch_k_range' }
+  { keys: '⇧ + Click', actions: [], text: 'ch_k_range' },
+  { keys: 'Double-click', actions: [], text: 'ch_k_dbl' },
+  { keys: '↑ ↓ ← →  Space  Enter', actions: [], text: 'ch_k_tree' }
 ]

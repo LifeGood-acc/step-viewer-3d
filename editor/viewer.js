@@ -9,12 +9,14 @@ import { initStudioUi } from './shared/studio-ui.js'
 import { keyAction } from './shared/keymap.js'
 import { askConfirm, confirmOpen } from './shared/confirm-dialog.js'
 import { createBackground } from './shared/background-three.js'
-import { BG_MODES } from './shared/prefs-core.js'
 import { buildChrome } from './shared/chrome-layout.js'
 import { controlsState } from './shared/controls-core.js'
-import { migratePrefs, isNewerPrefs, bgModeOf, withBg, defaultState, resetPrefs } from './shared/prefs-core.js'
+import { migratePrefs, isNewerPrefs, bgModeOf, bgColorOf, nextBgMode, withBg, defaultState, resetPrefs } from './shared/prefs-core.js'
 import { createSelectionBox } from './shared/selection-three.js'
 import { initPartCard } from './shared/part-card.js'
+import { unitFromFile } from './shared/weight-core.js'
+import { createPartTree } from './shared/part-tree-ui.js'
+import { PLUGIN_VERSION } from './version.js'
 import * as S from './shared/tools-scene.js'
 import { dragReducer, planOpen } from './shared/core.js'
 import { suggestName, triangleCount, write3MF, writeGLB, writeOBJ, writePLY, writeSTL } from './shared/export.js'
@@ -30,12 +32,13 @@ import { installMeasureInteraction } from './shared/measure-wire.js'
 import { copyText, detailsText } from './shared/details.js'
 import { createSessionStore, KEEP_MAX_BYTES } from './shared/session-store.js'
 import { UNIT_METERS } from './shared/tools-scene.js'
-import { fitDistance, summarizeParts, buildRows, clipPlane, converterParams, detectStepUnit, extOf, fileAxisToView, filterIndices, HARD_MAX_BYTES, isStartText, pickFile, stateLine, SUPPORTED_EXT, looksLikeStep, makeFormat, makeT, measureInfo, memoryEstimateGB, niceStep, partHue, pickLocale, planUnit, presetDirection, presetScale, WARN_BYTES } from './lib.js'
+import { fitDistance, summarizeParts, buildRows, clipPlane, converterParams, detectStepUnit, extOf, fileAxisToView, HARD_MAX_BYTES, isStartText, pickFile, stateLine, SUPPORTED_EXT, looksLikeStep, makeFormat, makeT, measureInfo, memoryEstimateGB, niceStep, partHue, pickLocale, planUnit, presetDirection, presetScale, WARN_BYTES } from './lib.js'
 
 const $ = (id) => document.getElementById(id)
 const CONVERTER_FAILED = 'converter_failed' // the code the worker sends; the page says it in the person's language
 const locale = pickLocale(orca.locale || navigator.language)
 const t = makeT(locale)
+let extentText = '' // the size of the whole model as one line, for "Copy details" (the card shows it as three numbers)
 const F = makeFormat(locale)
 document.documentElement.lang = locale
 for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n)
@@ -67,7 +70,6 @@ function savePrefs() {
 }
 
 const WARN_TRIS = 1_500_000
-const MAX_ROWS = 1000
 const DEFAULT_COLOR = 0xb9c0cb
 
 const state = {
@@ -107,7 +109,7 @@ camera.up.set(0, 1, 0)
 scene.add(camera)
 let studioUiRef = null // the studio ui, once it exists (the background asks it for the look's own)
 const bgModel = createBackground({ scene, canvas, studio: () => studioUiRef, themeDark: () => document.documentElement.classList.contains('dark') })
-bgModel.set(bgModeOf(prefs)) // one model for both viewers: look, orca, light, dark, white, gradient, transparent
+bgModel.set(bgModeOf(prefs), bgColorOf(prefs)) // one model for both viewers: look, orca, light, dark, white, gradient, transparent, custom (own colour)
 const hemisphere = new THREE.HemisphereLight(0xffffff, 0x8a8a8a, 1.6)
 scene.add(hemisphere)
 const headlight = new THREE.DirectionalLight(0xffffff, 1.8)
@@ -137,7 +139,7 @@ scene.add(helpers)
 // "Mesh over the surface": a line object per mesh, in the helpers (not in the model: exports and part numbers never see it)
 const meshOver = createMeshOverlay({ THREE, parent: helpers, getMeshes: () => parts.flatMap((p) => { const r = []; if (p.obj) p.obj.traverse((o) => o.isMesh && r.push(o)); return r }) })
 meshOver.install(scene)
-if (typeof window.__mv3dHook === 'function') window.__mv3dHook({ renderer, scene, camera, controls, get parts() { return parts }, get rows() { return rows }, get measure() { return measure }, get helpers() { return helpers }, get modelRoot() { return modelRoot }, get chrome() { return chrome }, get state() { return state } }) // test tooling only
+if (typeof window.__mv3dHook === 'function') window.__mv3dHook({ renderer, scene, camera, controls, get partCard() { return partCard }, get parts() { return parts }, get rows() { return rows }, get measure() { return measure }, get helpers() { return helpers }, get modelRoot() { return modelRoot }, get chrome() { return chrome }, get state() { return state }, viewFrame: () => viewFrame() }) // test tooling only
 
 // A lost WebGL context (GPU reset, too many contexts) is recoverable: three.js re-uploads what it needs after restore.
 let glLost = false
@@ -171,14 +173,22 @@ function requestRender() {
   requestAnimationFrame(() => {
     wantRender = false
     renderer.render(scene, camera)
+    viewFrame()
   })
+}
+/** After a drawn frame: the cube, the scale bar, the zoom and the status bar follow the camera (shared/view-info.js; the numbers come from the camera and the mesh). */
+function viewFrame() {
+  if (!chrome || !model) return
+  chrome.view.frame({ matrix: camera.matrixWorld.elements, distance: camera.position.distanceTo(controls.target), fov: camera.fov, viewH, fit: fitDistance(diag / 2, camera.fov, camera.aspect), grid: { on: !!gridObj && state.grid, step: gridStep } })
 }
 controls.addEventListener('change', requestRender)
 // The view is the #stage element: its size follows the window, the side panel and the toolbar (layout in shared/shell.js).
+let viewH = 1 // the height of the view in pixels (read when the view changes size, not at every frame)
 function resize() {
   const s = $('stage')
   const w = Math.max(1, s.clientWidth)
   const h = Math.max(1, s.clientHeight)
+  viewH = h
   renderer.setSize(w, h, false)
   camera.aspect = w / h
   camera.updateProjectionMatrix()
@@ -233,6 +243,12 @@ function disposeModel() {
   allMaterials = new Set()
   parts = []
   rows = []
+  if (chrome) {
+    chrome.files.update(null)
+    chrome.dims.update(null)
+    extentText = ''
+    chrome.view.setModel(null)
+  }
   model = null
   selectedRow = -1
   selRows.clear()
@@ -497,7 +513,7 @@ function buildModel(msg, unit, fileBytes, rec) {
   modelRoot.add(model)
   parts = newParts
   rows = buildRows(msg.root, msg.meshes.map((m) => m.name), (n) => t('part_n', { n }))
-  collapsed.clear()
+  tree.reset()
   allMaterials = new Set([...shading.shared, ...parts.map((p) => p.orig)])
   unitInfo = unit
   applyUp()
@@ -723,6 +739,32 @@ function checkRows() {
   if (checkInfo.inverted) rows.push([t('row_normals'), t('val_inward')])
   return rows
 }
+/** Where a row of the Info card comes from: the file says it, the viewer's own setting, or it is worked out from the mesh (the default). */
+function statSource(label) {
+  const FILE = [t('s_name'), t('s_parts'), t('s_faces'), t('s_size')] // what the file itself says
+  const DERIVED = [t('s_extent'), t('s_triangles'), t('s_height'), t('s_grid'), t('row_watertight'), t('row_volume'), t('row_area'), t('row_normals'), t('s_read'), t('s_memory')] // worked out from the mesh or measured while loading
+  const UI = [t('s_unit'), t('s_quality')] // a setting or a name of the viewer, no quantity of the file
+  if (FILE.includes(label)) return 'file'
+  if (DERIVED.includes(label)) return 'derived'
+  if (UI.includes(label)) return 'ui'
+  console.error(`info card: no origin declared for the row "${label}"`) // a new row must be added to one of the three lists; there is no default
+  return 'ui'
+}
+/** The card Files (one row): what the file says (name, format, size, the unit when it names one) and the mesh quality, a setting of the viewer. */
+function updateFilesCard() {
+  if (!chrome) return
+  if (!model || !lastStats) return chrome.files.update(null)
+  const format = (extOf(lastStats.name || '') || 'step').toUpperCase()
+  chrome.files.update({
+    name: lastStats.name || format,
+    nameSrc: lastStats.name ? 'file' : 'ui',
+    format,
+    size: F.mb(lastStats.fileBytes),
+    unit: unitInfo.short,
+    unitSrc: unitFromFile(unitInfo.mode) ? 'file' : 'assumed',
+    quality: t('q_' + lastStats.quality)
+  })
+}
 function buildStats() {
   const { tris, faces } = summarizeParts(parts)
   const u = unitInfo.short
@@ -737,29 +779,33 @@ function buildStats() {
         : t('unit_default', { name: unitName })
   const rowsOut = [
     ...(lastStats.name ? [[t('s_name'), lastStats.name]] : []),
-    [t('s_size'), F.mb(lastStats.fileBytes)],
+    [t('s_extent'), `${F.len(fileSize.x)} × ${F.len(fileSize.y)} × ${F.len(fileSize.z)} ${u}`],
     [t('s_parts'), F.int(parts.length)],
     [t('s_faces'), F.int(faces)],
     [t('s_triangles'), F.int(tris)],
-    [t('s_extent'), `${F.len(fileSize.x)} × ${F.len(fileSize.y)} × ${F.len(fileSize.z)} ${u}`],
     [t('s_height'), `${F.len(boundsBox.min.y)} … ${F.len(boundsBox.max.y)} ${u}`],
     ...checkRows(),
     [t('s_grid'), `${F.len(gridStep)} ${u}`],
-    [t('s_unit'), unitLabel],
+    [t('s_unit'), unitLabel], // one level down: the unit is set in the Info tab's own row
     [t('s_quality'), t('q_' + lastStats.quality)],
+    [t('s_size'), F.mb(lastStats.fileBytes)],
     [t('s_read'), F.dur(lastStats.readMs)]
   ]
   if (lastStats.wasmMB) rowsOut.push([t('s_memory'), `${F.int(lastStats.wasmMB)} MB`])
   const dl = $('stats')
   dl.replaceChildren()
   $('stats-more').replaceChildren()
-  const advanced = new Set([t('s_read'), t('s_memory'), t('s_height')]) // read time, converter memory, height range: one level down
+  const advanced = new Set([t('s_read'), t('s_memory'), t('s_height'), t('s_unit')]) // read time, converter memory, height range, the unit's name (the unit itself is set in its own row): one level down
+  extentText = rowsOut.find((r) => r[0] === t('s_extent'))[1]
+  if (chrome) chrome.dims.update({ x: F.len(fileSize.x), y: F.len(fileSize.y), z: F.len(fileSize.z), unit: u, unitSrc: unitFromFile(unitInfo.mode) ? 'file' : 'assumed' }) // the size is the row X, Y, Z at the top of the card, not a line of the list
   for (const [k, v] of rowsOut) {
+    if (k === t('s_extent')) continue
     const dt = document.createElement('dt')
     dt.textContent = k
     const dd = document.createElement('dd')
     dd.textContent = v
     dd.title = v // the full value for anything the panel has to cut
+    dd.dataset.src = statSource(k) // where the number comes from (cards.js): the Info card is part of the honesty check
     if (k === t('s_name')) dd.className = 'ell' // a file name stays on one line with an ellipsis
     ;(advanced.has(k) ? $('stats-more') : dl).append(dt, dd)
   }
@@ -770,6 +816,8 @@ function buildStats() {
   w.hidden = warn.length === 0
   w.replaceChildren(...warn.map((text) => Object.assign(document.createElement('div'), { textContent: text })))
   setHasModel(true)
+  updateFilesCard()
+  if (chrome) chrome.view.setModel({ tris, points: 0, parts: parts.length, partsSrc: 'file', unit: unitInfo.short, unitSrc: unitFromFile(unitInfo.mode) ? 'file' : 'assumed' })
 }
 
 // ---------- material flags ----------
@@ -854,17 +902,32 @@ function rowSwatch(r) {
   return '#' + c.getHexString(THREE.SRGBColorSpace)
 }
 
-function rowVisibility(r) {
-  const vis = r.meshes.filter((i) => parts[i].visible).length
-  return vis === 0 ? 0 : vis === r.meshes.length ? 2 : 1 // none, some, all
-}
-
-function updateVisibleCount() {
-  const vis = parts.filter((p) => p.visible).length
-  $('part-count').textContent = t('parts_visible', { v: vis, n: parts.length })
-}
-
-const collapsed = new Set() // indices of group rows that are folded
+// the part tree (part-tree-ui.js, the same in both viewers): rows with a tick, a fold button, filter and arrow keys; the selection stays in `selRows` below
+const tree = createPartTree({
+  t,
+  fmt: F.int,
+  host: $('parts'),
+  filter: $('filter'),
+  count: $('part-count'),
+  note: () => $('parts-note'),
+  getRows: () => rows,
+  getPart: (k) => parts[k],
+  swatch: rowSwatch,
+  searchText: (r) => r.name,
+  nameSrc: (r) => r.src || 'file',
+  selected: () => new Set(selectedIndices()),
+  onVisible: (i, on) => {
+    setVisible(rows[i].meshes, on)
+    requestRender() // the view draws only on request
+  },
+  onSelect: (i, mode) => selectRow(i, false, mode),
+  onIsolate: (i) => {
+    const keep = new Set(rows[i].meshes)
+    setAllVisible((_, k) => keep.has(k))
+    selectRow(i, false)
+  },
+  isMulti: () => multiSelect
+})
 function buildRowList() {
   updateControls()
   $('part-sec').hidden = parts.length < 2
@@ -875,66 +938,7 @@ function buildRowList() {
     $('measure-mode').value = 'distance'
   }
   if (parts.length < 2) return
-  const box = $('parts')
-  box.replaceChildren()
-  $('filter').hidden = rows.length < 8
-  const shown = filterIndices(rows.map((r) => r.name), $('filter').hidden ? '' : $('filter').value)
-  if (shown.length === 0) box.append(Object.assign(document.createElement('div'), { className: 'hint more', textContent: t('filter_none') }))
-  // a collapsed group hides the rows below it (deeper, until a row of its own depth or less comes); a filter shows every match whatever is collapsed
-  const filtering = !$('filter').hidden && $('filter').value.trim() !== ''
-  let hideBelow = Infinity
-  const visibleRows = shown.filter((i) => {
-    const r = rows[i]
-    if (filtering) return true
-    if (r.depth <= hideBelow) hideBelow = Infinity
-    if (r.depth > hideBelow) return false
-    if (r.group && collapsed.has(i)) hideBelow = r.depth
-    return true
-  })
-  visibleRows.slice(0, MAX_ROWS).forEach((i) => {
-    const r = rows[i]
-    const row = document.createElement('div')
-    const vis = rowVisibility(r)
-    row.className = 'part' + (vis === 0 ? ' off' : '') + (selRows.has(i) ? ' sel' : '') + (r.group ? ' group' : '')
-    row.dataset.i = String(i)
-    row.style.setProperty('--d', String(Math.min(r.depth, 8)))
-    const cb = document.createElement('input')
-    cb.type = 'checkbox'
-    cb.checked = vis === 2
-    cb.indeterminate = vis === 1
-    cb.setAttribute('aria-label', t('visible_label', { name: r.name }))
-    const sw = document.createElement('span')
-    sw.className = 'sw'
-    sw.style.background = rowSwatch(r)
-    const nm = document.createElement('span')
-    nm.className = 'nm'
-    nm.style.setProperty('--d', String(Math.min(r.depth, 8)))
-    const kids = r.group && rows[i + 1] && rows[i + 1].depth > r.depth
-    // a group with rows below has a fold button; every other row only a blank of the same width (not a button: a screen reader would read "button")
-    const foldable = kids && !filtering
-    const tw = document.createElement(foldable ? 'button' : 'span')
-    tw.className = 'tw'
-    if (foldable) {
-      tw.type = 'button'
-      tw.textContent = collapsed.has(i) ? '▸' : '▾'
-      tw.setAttribute('aria-label', t(collapsed.has(i) ? 'row_expand' : 'row_collapse', { name: r.name }))
-      tw.setAttribute('aria-expanded', String(!collapsed.has(i)))
-    } else tw.setAttribute('aria-hidden', 'true')
-    nm.textContent = r.name
-    nm.title = r.name
-    const tr = document.createElement('span')
-    tr.className = 'tr'
-    tr.textContent = F.int(r.meshes.reduce((a, k) => a + parts[k].tris, 0)) + ' △'
-    row.append(cb, sw, tw, nm, tr)
-    box.append(row)
-  })
-  if (visibleRows.length > MAX_ROWS) {
-    const more = document.createElement('div')
-    more.className = 'hint more'
-    more.textContent = t('parts_more', { n: F.int(visibleRows.length - MAX_ROWS), max: MAX_ROWS })
-    box.append(more)
-  }
-  updateVisibleCount()
+  tree.render()
 }
 
 function setVisible(indices, v, notify = true) {
@@ -951,38 +955,6 @@ function setAllVisible(fn) {
   requestRender()
 }
 
-$('parts').addEventListener('change', (e) => {
-  const rowEl = e.target.closest('.part')
-  if (!rowEl) return
-  const idx = rowEl.dataset.i
-  setVisible(rows[Number(idx)].meshes, e.target.checked)
-  buildRowList()
-  const again = document.querySelector(`.part[data-i="${idx}"] input`)
-  if (again) again.focus() // the rebuild replaced the row: keep keyboard users where they were
-  requestRender()
-})
-$('parts').addEventListener('click', (e) => {
-  const rowEl = e.target.closest('.part')
-  if (!rowEl || e.target.tagName === 'INPUT') return
-  if (e.target.closest('button.tw')) {
-    const k = Number(rowEl.dataset.i)
-    if (collapsed.has(k)) collapsed.delete(k)
-    else collapsed.add(k)
-    buildRowList()
-    const again = document.querySelector(`.part[data-i="${k}"] .tw`)
-    if (again) again.focus() // the rebuild replaced the row: keyboard users stay on the button
-    return
-  }
-  selectRow(Number(rowEl.dataset.i), false, e.shiftKey ? 'range' : e.metaKey || e.ctrlKey || multiSelect ? 'toggle' : 'replace')
-})
-$('parts').addEventListener('dblclick', (e) => {
-  const rowEl = e.target.closest('.part')
-  if (!rowEl || e.target.closest('button.tw') || e.target.tagName === 'INPUT') return // the fold button and the checkbox are not "show only this"
-  const k = Number(rowEl.dataset.i)
-  const keep = new Set(rows[k].meshes)
-  setAllVisible((_, i) => keep.has(i))
-  selectRow(k, false)
-})
 $('l-all').onclick = () => setAllVisible(() => true)
 $('l-none').onclick = () => setAllVisible(() => false)
 $('l-inv').onclick = () => setAllVisible((p) => !p.visible)
@@ -997,18 +969,6 @@ $('l-color').onclick = () => {
  * 'range': from the main row to this one (Shift click in the list). i = -1 clears. A node selects all the meshes below it.
  */
 function selectRow(i, scroll, mode = 'replace') {
-  // a row inside a folded group is shown by unfolding the groups above it
-  if (i > 0 && rows[i]) {
-    let need = rows[i].depth
-    let changed = false
-    for (let k = i - 1; k >= 0 && need > 0; k--) {
-      if (rows[k].depth < need) {
-        need = rows[k].depth
-        if (collapsed.delete(k)) changed = true
-      }
-    }
-    if (changed) buildRowList()
-  }
   if (i < 0 || !rows[i]) {
     selRows.clear()
     selectedRow = -1
@@ -1052,11 +1012,8 @@ function syncSelection(scroll) {
   for (const r of [...selRows]) if (!rows[r]) selRows.delete(r)
   if (selectedRow >= 0 && !selRows.has(selectedRow)) selectedRow = selRows.size ? [...selRows][selRows.size - 1] : -1
   selFrame.set(selRows.size ? selectionBox3() : null) // a dashed blue box around everything selected
-  document.querySelectorAll('.part').forEach((r) => r.classList.toggle('sel', selRows.has(Number(r.dataset.i))))
-  if (scroll && selectedRow >= 0) {
-    const r = document.querySelector(`.part[data-i="${selectedRow}"]`)
-    if (r) r.scrollIntoView({ block: 'nearest' })
-  }
+  tree.updateSelection()
+  if (scroll && selectedRow >= 0) tree.reveal(selectedRow) // a row inside a folded group is shown by unfolding the groups above it
   if (partCard) partCard.update()
   updateControls() // the info tab names the selection
   requestRender()
@@ -1298,6 +1255,7 @@ async function buildCompressedCopy({ only, target, scale = 1, opts, onProgress, 
 // "Copy details": the rows of the Details section as text.
 $('b-copy-details').onclick = () => {
   const rows = [...document.querySelectorAll('#stats dt')].map((dt) => [dt.textContent, dt.nextElementSibling ? dt.nextElementSibling.textContent : ''])
+  if (extentText) rows.splice(rows.findIndex((r) => r[0] === t('s_name')) + 1, 0, [t('s_extent'), extentText]) // after the name (as the list was), the card shows the three numbers on top
   flash(copyText(detailsText(`${PLUGIN_NAME} ${t('stats')}`, rows)) ? t('copied') : t('copy_failed'))
 }
 // The quick path: the current view as a PNG, as it is shown (with the background), saved straight away.
@@ -1321,17 +1279,20 @@ function applyPreset(name) {
   controls.update()
   requestRender()
 }
+/** The cube's edges and corners: the same fit as a preset view, looking from the given direction (a vector from the model towards the camera). */
+function lookFrom(dir) {
+  if (!model) return
+  const d = fitDistance(diag / 2, camera.fov, camera.aspect)
+  camera.position.copy(center).addScaledVector(new THREE.Vector3(...dir).normalize(), d)
+  controls.target.copy(center)
+  controls.update()
+  requestRender()
+}
 $('preset').onchange = (e) => {
   if (e.target.value === 'all') resetView()
   else applyPreset(e.target.value)
   e.target.value = ''
 }
-let filterFrame = 0
-$('filter').oninput = () => {
-  cancelAnimationFrame(filterFrame)
-  filterFrame = requestAnimationFrame(buildRowList) // one rebuild per frame while typing
-}
-
 // ---------- toolbar ----------
 const toggle = (key, after) => {
   state[key] = !state[key]
@@ -1354,19 +1315,19 @@ function refreshBg() {
   $('b-bg').textContent = label
   $('b-bg').setAttribute('aria-label', label)
   applyHelperFlags()
-  if (chrome) chrome.syncBackground(bgModel.mode, !!(studioUi && studioUi.isActive()))
+  if (chrome) chrome.syncBackground(bgModel.mode, !!(studioUi && studioUi.isActive()), bgModel.color)
   requestRender()
   shell.layout() // the label changed length
 }
-function setBackground(mode) {
-  bgModel.set(mode)
-  prefs = withBg(prefs, mode)
+function setBackground(mode, color) {
+  bgModel.set(mode, color)
+  prefs = withBg(prefs, mode, bgModel.color)
   savePrefs()
   refreshBg()
 }
 /** Key B: the next background, named (the list in the Studio menu shows and sets the same mode). */
 function cycleBackground() {
-  const next = BG_MODES[(BG_MODES.indexOf(bgModel.mode) + 1) % BG_MODES.length]
+  const next = nextBgMode(bgModel.mode)
   setBackground(next)
   flash(t('ch_bg_now', { name: t('ch_bg_' + next) }))
 }
@@ -1503,8 +1464,9 @@ window.addEventListener('keydown', (e) => {
   if (a && KEY_ACTIONS[a.action]) KEY_ACTIONS[a.action](a)
 })
 orca.on('theme', () => {
-  if (bgModel.mode === 'look' || bgModel.mode === 'orca') refreshBg()
-})
+  refreshBg()
+  chrome.view.redraw() // the cube's colours are the theme's
+}) // also while another background is on: the swatch of Orca in the Studio menu shows the colour of the theme
 
 // ---------- close the model ----------
 // Back to the start page: the scene is emptied, the kept "last file" is forgotten. Always asked first, with a dialog the page draws itself
@@ -1520,7 +1482,7 @@ async function closeModel() {
   prevCurrent = null
   pendingIgnored = 0
   lastStats = null
-  collapsed.clear()
+  tree.reset()
   if (studioUi) studioUi.studio.spin.stop()
   disposeModel()
   setHasModel(false)
@@ -1838,15 +1800,17 @@ $('b-open').onclick = () => $('file-input').click()
 
 new ResizeObserver(resize).observe($('stage'))
 // the toolbar, the side tabs and the measuring bar are built from the page's elements (chrome-layout.js), before the shell wires them
-chrome = buildChrome({ t, step: true, tabPref: { get: () => prefs.tab, set: (v) => ((prefs.tab = v), savePrefs()) } })
+chrome = buildChrome({ t, locale, version: PLUGIN_VERSION, step: true, tabPref: { get: () => prefs.tab, set: (v) => ((prefs.tab = v), savePrefs()) } })
 const shell = initShell({ getPrefs: () => prefs, savePrefs, onLayout: resize, popovers: chrome.popovers })
 chrome.hooks.fitAll = () => resetView()
+chrome.hooks.lookFrom = (dir) => lookFrom(dir)
 chrome.hooks.fitSelected = () => fitView()
 chrome.hooks.openPanel = () => shell.setPanelOpen(true)
 chrome.hooks.resetAppearance = () => resetAppearance()
 chrome.hooks.isolate = () => isolateSelected(false)
 chrome.hooks.setMulti = (on) => (multiSelect = on)
-chrome.hooks.setBackground = (m) => setBackground(m)
+chrome.hooks.clearSelection = () => selectRow(-1, false)
+chrome.hooks.setBackground = (m, c) => setBackground(m, c)
 chrome.hooks.shadingOriginal = () => {
   $('shading').value = 'original'
   $('shading').dispatchEvent(new Event('change', { bubbles: true }))
@@ -2016,9 +1980,13 @@ partCard = initPartCard({
   t,
   locale,
   A: toolsAdapter,
-  host: $('parts'),
+  host: $('part-count') || $('parts'), // the cards stand after the count line under the tree
   chipHost: $('stage'),
   meshNote: true, // the sizes come from the triangle mesh of the CAD kernel
+  upAxis: () => (state.up === 'y' ? 'y' : 'z'), // the axis of the file that is up (the "Up is" choice)
+  meshQuality: () => (lastStats && ['coarse', 'normal', 'fine'].includes(lastStats.quality) ? lastStats.quality : null), // the quality the model on screen was built with
+  unitSrc: () => (unitFromFile(unitInfo.mode) ? 'file' : 'assumed'), // one rule for the note under the numbers and for the weight card (weight-core.js)
+  weight: { mode: () => unitInfo.mode }, // the card "Estimate the weight" (STEP only): only where the unit is the file's own
   fmtLen: F.len,
   fmtVol: (v, u) => F.vol(v, u),
   fmtArea: (v, u) => F.area(v, u),
@@ -2046,7 +2014,7 @@ partCard = initPartCard({
     }
     return inside > 0 && inside < 8
   },
-  describe: (i) => ({ name: parts[i].name || rows.find((r) => r.meshes.length === 1 && r.meshes[0] === i)?.name, colour: rowSwatch({ meshes: [i] }) }),
+  describe: (i) => ({ name: parts[i].name || rows.find((r) => r.meshes.length === 1 && r.meshes[0] === i)?.name, colour: rowSwatch({ meshes: [i] }), colourSrc: 'derived' }), // the colour shown (the converter's, or the viewer's own grey)
   prefs: { get: (k) => prefs[k], set: (k, v) => ((prefs[k] = v), savePrefs()) }
 })
 setHasModel(false)

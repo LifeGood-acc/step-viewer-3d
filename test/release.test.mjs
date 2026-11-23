@@ -33,7 +33,7 @@ test('npm run build reproduces editor/vendor (when node_modules is installed)', 
 test('only images and WebAssembly are binary files; no archives', { skip: !isGit && 'no git' }, () => {
   const files = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
   const allowed = /\.(png|wasm)$/
-  const textish = /\.(js|mjs|json|md|html|css|py|sh|txt|step|stepview|3dview|sha256)$|(^|\/)(LICENSE|\.gitignore|\.gitattributes)$/
+  const textish = /\.(js|mjs|json|md|html|css|py|sh|txt|svg|step|stepview|3dview|sha256)$|(^|\/)(LICENSE|\.gitignore|\.gitattributes)$/
   const bad = files.filter((f) => !allowed.test(f) && !textish.test(f))
   assert.deepEqual(bad, [], 'unexpected file types in the repository (the catalog rejects binary files and archives)')
   assert.deepEqual(files.filter((f) => /\.(zip|3mf|gz|tar|tgz|7z|rar|whl|icns|o|a|hwp|glb|ply|stl|fbx|usdz)$/i.test(f)), [])

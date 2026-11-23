@@ -23,6 +23,8 @@ offline (the unit tests run it); `node dev/vendor.mjs --update` downloads each p
 rebuilds the files, which must come out byte-identical. **No file is minified by this project.** The only minified JavaScript is upstream's: the occt-import-js glue, which is Emscripten output as published. `three.module.js` and `three.core.js` are the readable builds in `three@0.187.0` (`build/`; the package ships no `.min.js` any more) and come from the tag r187 in the GitHub repository. The occt-import-js glue is the
 upstream Emscripten output (as published, not minified by us); its source is the occt-import-js repository above.
 
+A per-file table (source, version, license, size, SHA-256 of every bundled third-party file) is in [docs/VENDORED.md](docs/VENDORED.md).
+
 Package integrity (from the npm registry): `three@0.187.0` `sha512-Qiu7R+Cmh8CstZsY1uJOSWnVlfo7ZtNLV7mF8Jltk3LB3AtDu9cRZlcnRKkAk8Y4z6KKw35z7Y7Urd7jWY8etA==`;
 `occt-import-js@0.0.23` `sha512-RFfYQXYFX5C1mB1Aywm0ShcUKzXOr/VzTnlzhBSDJOR6YCAPt1HYCzeXWg1vwwjn/cUxwqRNhhtf1dlewoZYCQ==`;
 `meshoptimizer@1.3.0` `sha512-2oZqMAcEEiCtXWUjIGtZ71oPx1B0ZxYGTqIKsXB1wzWFhleNsCFxQuUJzgCV706bRcwPWtMGf1odmQvAcqKkIw==`.

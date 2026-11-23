@@ -94,7 +94,7 @@ export const EXPORT_STRINGS = {
     ex_note_none: 'This format has nothing to write for this model.',
   },
   de: {
-    export_btn: 'Exportieren…',
+    export_btn: 'Export…',
     tip_export: 'Ein Bild, einen Film oder eine 3D-Datei speichern (E)',
     export_title: 'Exportieren',
     ex_hint_copy: 'Das erzeugt eine Kopie. Die Originaldatei wird nie verändert.',

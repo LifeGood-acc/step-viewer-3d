@@ -1,15 +1,11 @@
 /* Layout and widgets are in shared/shell.css (identical in both plugins). Plugin-specific rules go here. */
+:root { --plugin: #c2410c; } /* the colour of this plugin in the icon family: only the mark in the empty view uses it */
 .busy > div { min-width: min(280px, 100%); }
 .busy[hidden] { display: none !important; }
 .progress { height: 4px; margin: 10px 0 6px; border-radius: 2px; background: var(--border); overflow: hidden; position: relative; }
-.progress span { position: absolute; top: 0; bottom: 0; width: 35%; background: var(--on); border-radius: 2px; animation: slide 1.2s ease-in-out infinite; }
-@keyframes slide { 0% { left: -35%; } 100% { left: 100%; } }
-@media (prefers-reduced-motion: reduce) { .progress span { animation: none; left: 0; width: 100%; opacity: .5; } }
+.progress span { position: absolute; top: 0; bottom: 0; left: 0; width: 35%; background: var(--on); border-radius: 2px; animation: slide 1.2s ease-in-out infinite; }
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(286%); } } /* the bar moves by transform (the compositor), not by left: 286% of its own width = the full width of the track */
+@media (prefers-reduced-motion: reduce) { .progress span { animation: none; width: 100%; opacity: .5; } } /* "reduce motion": no moving bar, a calm half-filled track */
 .msg.busy { pointer-events: none; }
 .msg.busy button { pointer-events: auto; }
 
-/* the fold button of a group row in the parts list */
-.part .nm { padding-left: 0; } /* the indentation sits before the fold button instead */
-.part .tw { margin-left: calc(var(--d, 0) * 14px); flex: none; width: 16px; height: 16px; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 11px; line-height: 1; }
-span.tw { display: inline-block; }
-.part .tw:hover:not(:disabled) { color: var(--fg, inherit); }

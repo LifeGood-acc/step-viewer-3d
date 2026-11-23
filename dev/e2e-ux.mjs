@@ -163,8 +163,11 @@ try {
   check(await ev(`window.__h.scene.background === null && document.querySelector('canvas').classList.contains('studio-clear')`), 'background: transparent (the checker pattern shows)')
   await setBg('look')
   await key('b')
-  check((await bgMode()) === 'orca', `key B: the next background is "like Orca" (${await bgMode()})`)
-  check(/Background: Like Orca/.test(await ev(`document.getElementById('msg-text').textContent`)), 'key B names the new background')
+  check((await bgMode()) === 'white' && (await bg()) === '255,255,255', `key B: from "like the look" (= Orca) the next background is white, a visible change (${await bgMode()}, ${await bg()})`)
+  check(/Background: White/.test(await ev(`document.getElementById('msg-text').textContent`)), 'key B names the new background')
+  const seenBg = new Set([await bg()])
+  for (let i = 0; i < 4; i++) { await key('b'); seenBg.add(await bg()) }
+  check(seenBg.size === 5 && (await bgMode()) === 'orca', `key B: five presses show five different backgrounds (${[...seenBg].join(' ')})`)
   await setBg('look')
   await preset('product_white')
   check((await bg()) === '255,255,255' && /Studio on/.test(await ev(`document.getElementById('b-studio').textContent`)), `background: with a look the look's own white shows, the button says "Studio on" (${await bg()})`)

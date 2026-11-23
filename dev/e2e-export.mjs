@@ -50,13 +50,14 @@ async function waitFor(expr, ms = 120000, what = expr) {
   }
   throw new Error(`timeout waiting for ${what}`)
 }
+// the three sizes are the row X, Y, Z at the top of the Info card (UX v3 round 4), no longer a line of the list
 const shownExpr = `(() => {
   const dd = [...document.querySelectorAll('#stats dd, #stats-more dd')].map((e) => e.textContent)
   const dt = [...document.querySelectorAll('#stats dt, #stats-more dt')].map((e) => e.textContent)
   const num = (label) => ((dd[dt.indexOf(label)] || '').replace(/\\u2212/g, '-').replace(/,/g, '').match(/-?\\d+(\\.\\d+)?/g) || []).map(Number)
   const parts = window.__h.parts
   return { state: document.documentElement.dataset.state, parts: parts.length, tris: parts.reduce((a, p) => a + (p.tris || 0), 0),
-    extent: num('Size X × Y × Z').slice(0, 3), height: num('Height range').slice(0, 2), unit: dd[dt.indexOf('Unit')] || '' }
+    extent: [...document.querySelectorAll('#info-dims-row .dim-n')].map((e) => Number(e.textContent.replace(/\\u2212/g, '-').replace(/,/g, ''))), height: num('Height range').slice(0, 2), unit: dd[dt.indexOf('Unit')] || '' }
 })()`
 const sameExtent = (a, b) => a.length === 3 && b.length === 3 && [...a].sort((x, y) => x - y).every((v, i) => Math.abs(v - [...b].sort((x, y) => x - y)[i]) <= 0.01 * Math.max(1, Math.abs(v)))
 const sameHeight = (a, b) => a.length === 2 && b.length === 2 && a.every((v, i) => Math.abs(v - b[i]) <= 0.01 * Math.max(1, Math.abs(b[i])))

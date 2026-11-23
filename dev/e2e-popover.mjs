@@ -111,7 +111,7 @@ try {
   // Esc with the menu open does not reach the viewer: the selection stays
   const rows = await ev(`document.querySelectorAll('.part').length`)
   if (rows > 1) {
-    await ev(`document.querySelector('.part[data-i="0"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))`)
+    await ev(`document.querySelector('.part:not(.group)').dispatchEvent(new MouseEvent('click', { bubbles: true }))`) // a part (a group row would show every part below it as selected)
     await press('b-more')
     await keyDoc('Escape')
     check((await menuOpen()).hidden === true && (await ev(`document.querySelectorAll('.part.sel').length`)) === 1, 'Esc closes the menu first and keeps the selection')

@@ -21,3 +21,9 @@ test('no text points to a part of the old interface', () => {
     for (const re of [/Tools section/, /Export a copy/, /Abschnitt Werkzeuge/, /Kopie exportieren/, /section \*Measure\*/, /Points section/, /\(Tools, Unit/, /\(Werkzeuge, Einheit/]) assert.ok(!re.test(text), `${f} still mentions the old interface: ${re}`)
   }
 })
+
+test('the version shown in the status bar (editor/version.js) is the manifest version', async () => {
+  const manifest = JSON.parse(readFileSync(join(root, 'orca-plugin.json'), 'utf8'))
+  const { PLUGIN_VERSION } = await import('../editor/version.js')
+  assert.equal(PLUGIN_VERSION, manifest.version, 'editor/version.js and orca-plugin.json must carry the same version')
+})

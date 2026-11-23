@@ -98,8 +98,8 @@ try {
   await shot('start.png')
   // parts with the part card
   await open(files.main)
-  const leaf = isStep ? ev(`window.__h.rows.findIndex((r) => r.meshes.length === 1)`) : Promise.resolve(3)
-  await clickRow(`.part[data-i="${await leaf}"]`)
+  const leaf = isStep ? await ev(`window.__h.rows.findIndex((r) => r.meshes.length === 1)`) : 3
+  await clickRow(`.part[data-i="${leaf}"]`)
   await press('b-measure'); await press('b-measure') // nothing: keeps the view plain
   await shot('parts-light.png')
   await size(1600, 1000)
@@ -112,25 +112,39 @@ try {
   // the Info tab
   await tab('info')
   await shot('info.png')
-  // the Edit tab
-  await tab('edit')
-  await shot(isStep ? 'tools.png' : 'tools.png')
+  // the Edit card (unfolded; the part card is closed so that the card is in sight)
+  await press('b-sel-clear')
+  await press('b-card-edit')
+  await ev(`document.getElementById('b-card-edit').scrollIntoView({ block: 'start' })`)
+  await shot('tools.png')
+  await press('b-card-edit')
+  await clickRow(`.part[data-i="${leaf}"]`)
   // the export dialog with a finished copy
   await press('b-export')
   await ev(`document.querySelector('#export-kind [data-kind="model"]').click()`)
   await press('b-ex-make')
   await waitFor(`!document.getElementById('b-ex-save').disabled`, 60000, 'the copy')
   await shot('export.png')
-  await press('b-export-close')
-  // the studio menu
+  await press('b-ex-close2')
+  // narrow (before any look is switched on: a switched-on Studio button is not legible on the light toolbar)
+  await size(420, 800)
+  await sleep(400)
+  await press('b-panel') // the sidebar is a sheet under the view in a narrow tab
+  await tab('parts')
+  await ev(`document.querySelectorAll('*').forEach((e) => { if (e.scrollTop > 0 && e !== document.scrollingElement) e.scrollTop = 0 })`) // the sheet starts at its top
+  await shot('narrow.png')
+  await press('b-panel')
+  await size(1280, 800)
+  // the studio menu, on the dark theme (there the switched-on button reads well), with a part selected
+  await send('Page.navigate', { url: `http://127.0.0.1:${port}/h/index.html?file=${encodeURIComponent(files.main)}&lang=en&theme=dark` })
+  await waitFor(`document.documentElement.dataset.state === 'ok'`, 90000, 'the model (dark)')
+  await clickRow(`.part[data-i="${leaf}"]`)
   await press('b-studio')
   await ev(`document.querySelector('#st-tiles [data-preset="product_white"]').click()`)
   await shot('studio-menu.png')
+  // back to the original look, so that no later picture carries it (the look is remembered between page loads)
+  await ev(`document.querySelector('#st-tiles [data-preset="original"]').click()`)
   await ev(`document.body.click()`)
-  // narrow
-  await size(420, 800)
-  await sleep(400)
-  await shot('narrow.png')
   if (isStep) {
     await size(1280, 800)
     // dark: the info tab with the mesh quality and the numbers; the mesh; the German interface

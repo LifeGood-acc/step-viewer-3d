@@ -34,9 +34,6 @@ export function buildExportDialog({ t, popovers, holder, filmBtn, hooks }) {
   const saveBtn = $('b-ex-save')
   const stopBtn = $('b-ex-cancel')
   const dlgTitle = el('div', { className: 'export-title', id: 'export-title', textContent: t('ch_ex_title') })
-  const dlgClose = el('button', { type: 'button', id: 'b-export-close', textContent: '✕' })
-  dlgClose.setAttribute('aria-label', t('side_close'))
-  dlgClose.title = t('side_close')
   const kindSeg = el('div', { className: 'seg export-kind', id: 'export-kind' })
   const kindBtns = new Map()
   for (const [k, label] of [['image', t('ch_ex_image')], ['film', t('ch_ex_film')], ['model', t('ch_ex_model')]]) {
@@ -51,7 +48,7 @@ export function buildExportDialog({ t, popovers, holder, filmBtn, hooks }) {
   const goBtn = el('button', { type: 'button', id: 'b-ex-go', className: 'primary', textContent: t('ch_ex_go') })
   const closeBtn = el('button', { type: 'button', id: 'b-ex-close2', textContent: t('ch_ex_cancel') })
   const foot = el('div', { className: 'pop-foot export-foot' }, closeBtn, goBtn)
-  const dialog = el('div', { id: 'export-dialog', className: 'export-dialog', hidden: true, role: 'dialog' }, el('div', { className: 'export-head' }, dlgTitle, dlgClose), orig, kindSeg)
+  const dialog = el('div', { id: 'export-dialog', className: 'export-dialog', hidden: true, role: 'dialog' }, el('div', { className: 'export-head' }, dlgTitle), kindSeg)
   dialog.setAttribute('aria-labelledby', 'export-title')
 
   // the old section: its sentence, buttons and result stay (hidden or below), the rest is the body of the dialog
@@ -64,16 +61,18 @@ export function buildExportDialog({ t, popovers, holder, filmBtn, hooks }) {
   fmtRow.after(smallRow)
   for (const o of fmt.options) if (o.value === 'png' || o.value === 'webm' || o.value === 'glbc') o.hidden = true
   const exUpRow = $('ex-up') && $('ex-up').closest('label')
+  // Advanced: "Up in the copy" and what the format changes (a technical sentence: not in the main path of format, two ticks, size, save)
+  const adv = el('details', { className: 'st-adv', id: 'ex-adv' }, el('summary', { textContent: t('ch_ex_adv') }))
   if (exUpRow) {
-    const adv = el('details', { className: 'st-adv', id: 'ex-adv' }, el('summary', { textContent: t('ch_ex_adv') }))
     exUpRow.before(adv)
     adv.append(exUpRow)
-  }
+  } else $('ex-lossy').before(adv)
+  adv.append(el('div', { className: 'menu-heading', textContent: t('ch_ex_changes') }), $('ex-lossy'))
   const exResult = $('ex-result')
   // body: the sections of the old export area, then the hint to the Edit tab, the size, the result, the foot
   const body = el('div', { className: 'export-body' })
   if (exSec) body.append(exSec)
-  dialog.append(body, exHint, foot)
+  dialog.append(body, orig, exHint, foot) // after the size: "About 63 KiB", "The original file stays unchanged", then the way to Edit
   for (const b of [makeBtn, saveBtn, stopBtn]) {
     b.classList.add('proxied')
     holder.append(b) // kept for export-ui.js and the tests: the dialog's two buttons press them
@@ -173,10 +172,10 @@ export function buildExportDialog({ t, popovers, holder, filmBtn, hooks }) {
     dialog.hidden = true
     pendingAt = 0
     $('b-export').setAttribute('aria-expanded', 'false')
-    ;(returnTo && returnTo !== document.body && returnTo.isConnected ? returnTo : $('b-export')).focus()
+    const back = returnTo && returnTo !== document.body && returnTo.isConnected && returnTo.offsetParent !== null ? returnTo : $('b-export').offsetParent !== null ? $('b-export') : $('b-more') // Export may be a row of More now
+    back.focus()
     return true
   }
-  dlgClose.onclick = closeExport
   dialog.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       e.stopPropagation()

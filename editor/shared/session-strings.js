@@ -3,7 +3,7 @@ export const SESSION_STRINGS = {
   en: {
     keep_note: 'The last file you dropped or chose is kept inside this plugin, on this computer only, so it is still here when the panel is shown again: {name} ({size}). "Close" forgets it.',
     close_btn: 'Close file…',
-    close_tip: 'Close the model and go back to the start page (the kept file is forgotten)',
+    close_tip: 'Close the model, back to the start page',
     close_title: 'Close the model?',
     close_text_changes: 'Changes that were not exported (tools, section, measurements) are lost. The file itself stays as it is.',
     close_text_plain: 'The model is closed and the last kept file is forgotten. The file itself stays as it is.',
@@ -15,7 +15,7 @@ export const SESSION_STRINGS = {
   de: {
     keep_note: 'Die zuletzt abgelegte oder gewählte Datei wird in diesem Plugin gemerkt, nur auf diesem Rechner, damit sie wieder da ist, wenn das Panel erneut gezeigt wird: {name} ({size}). „Schließen“ vergisst sie.',
     close_btn: 'Datei schließen…',
-    close_tip: 'Das Modell schließen und zur Startseite zurückkehren (die gemerkte Datei wird vergessen)',
+    close_tip: 'Modell schließen, zurück zur Startseite',
     close_title: 'Modell schließen?',
     close_text_changes: 'Nicht exportierte Änderungen (Werkzeuge, Schnitt, Messungen) gehen verloren. Die Datei selbst bleibt unverändert.',
     close_text_plain: 'Das Modell wird geschlossen und die zuletzt gemerkte Datei vergessen. Die Datei selbst bleibt unverändert.',

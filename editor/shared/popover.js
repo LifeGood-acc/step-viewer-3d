@@ -46,6 +46,14 @@ export function chooseTab(ids, remembered, preferred) {
   return ids[0] || null
 }
 
+/** How far (px, negative = to the left) a panel must move sideways to lie inside the window with `margin` px to spare: a panel that is wider
+ *  than the window puts its left edge at the margin. rect: { left, right }. */
+export function fitShift(rect, winW, margin = 8) {
+  const over = rect.right - (winW - margin)
+  if (over > 0) return rect.left - over < margin ? margin - rect.left : -over
+  return rect.left < margin ? margin - rect.left : 0
+}
+
 // ---------- DOM ----------
 
 const el = (tag, props = {}, ...kids) => {
@@ -70,10 +78,22 @@ export function createPopoverGroup({ root = document } = {}) {
         it.panel.hidden = !on
         it.button.setAttribute('aria-expanded', String(on))
         if (on && it.onOpen) it.onOpen()
+        if (on) place(it.panel)
+        if (grow) grow[on ? 'observe' : 'unobserve'](it.panel)
         if (!on && id === was && it.onClose) it.onClose()
       }
     }
-    if (next.focusButton && items.has(next.focusButton)) items.get(next.focusButton).button.focus()
+    if (next.focusButton && items.has(next.focusButton)) {
+      // the button of a menu that went into More (display none) cannot take the focus: More does
+      const b = items.get(next.focusButton).button
+      ;(b.offsetParent !== null || !items.has('more') ? b : items.get('more').button).focus()
+    }
+  }
+  /** A panel opens inside the window: it moves sideways when it would stick out at the right or the left (a menu at the right end of the bar). */
+  const place = (panel) => {
+    panel.style.translate = ''
+    const dx = fitShift(panel.getBoundingClientRect(), document.documentElement.clientWidth)
+    if (dx) panel.style.translate = `${Math.round(dx)}px 0`
   }
   const dispatch = (action) => apply(popoverStep(state, action))
   const inside = (e) => {
@@ -87,8 +107,11 @@ export function createPopoverGroup({ root = document } = {}) {
       e.stopPropagation() // Esc closes the popover first; only the next Esc reaches the viewer (measuring, selection)
     }
   }
+  const onResize = () => state.open && items.has(state.open) && place(items.get(state.open).panel)
+  const grow = typeof ResizeObserver === 'function' ? new ResizeObserver(onResize) : null // an open menu that grows (a section unfolds) is placed again
   root.addEventListener('click', onClick)
   root.addEventListener('keydown', onKey)
+  window.addEventListener('resize', onResize)
   return {
     add({ id, button, panel, wrap = null, onOpen = null, onClose = null }) {
       items.set(id, { button, panel, wrap, onOpen, onClose })
@@ -108,6 +131,7 @@ export function createPopoverGroup({ root = document } = {}) {
     destroy() {
       root.removeEventListener('click', onClick)
       root.removeEventListener('keydown', onKey)
+      window.removeEventListener('resize', onResize)
     },
     open: (id) => dispatch({ type: 'open', id }),
     close: (focus = false) => dispatch({ type: 'close', focus }),
@@ -135,6 +159,7 @@ export function createTabs({ list, tabs, active = null, preferred = null, onChan
   const uid = ++tabsMade // ids of the tab buttons stay unique when several tab lists exist
   let shown = tabs.map((t) => t.id)
   let current = null
+  let stacked = null // three-column layout: null (one panel at a time) or (id, current) => should this panel show; the tab list is hidden then
   const render = () => {
     for (const t of tabs) {
       const on = shown.includes(t.id)
@@ -143,7 +168,7 @@ export function createTabs({ list, tabs, active = null, preferred = null, onChan
       const isCur = on && t.id === current
       b.setAttribute('aria-selected', String(isCur))
       b.tabIndex = isCur ? 0 : -1
-      t.panel.hidden = !isCur
+      t.panel.hidden = stacked ? !(on && stacked(t.id, current)) : !isCur
     }
   }
   for (const t of tabs) {
@@ -185,6 +210,12 @@ export function createTabs({ list, tabs, active = null, preferred = null, onChan
       render()
       if (changed && current && notify) onChange(current)
     },
+    /** Three columns: every tab that exists shows as a card where fn(id, currentId) says so (null goes back to one panel at a time). */
+    setStacked(fn) {
+      stacked = fn
+      render()
+    },
+    refresh: render,
     label: (id, text) => (buttons.get(id).textContent = text),
     button: (id) => buttons.get(id)
   }

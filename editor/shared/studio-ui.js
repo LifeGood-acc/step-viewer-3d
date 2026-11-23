@@ -34,6 +34,7 @@ export function initStudioUi(ctx) {
     row(t('st_color2'), color('st-color2'), 'st-color2-row'),
     el('label', { className: 'row' }, el('input', { id: 'st-floor', type: 'checkbox' }), el('span', { className: 'grow', textContent: t('st_floor') })),
     row(t('st_shadow'), range('st-shadow', 0, 1, 0.05)),
+    el('p', { id: 'st-why', className: 'hint', hidden: true, textContent: t('st_off_why') }),
     el('p', { id: 'st-note', className: 'hint', hidden: true })
   )
   const lights = el('details', { className: 'lights', id: 'st-lights' }, el('summary', { textContent: t('st_lights') }))
@@ -54,7 +55,7 @@ export function initStudioUi(ctx) {
     el('h4', { className: 'sub', textContent: t('st_turntable') }),
     row(t('st_speed'), range('st-speed', 5, 90, 1)),
     el('div', { className: 'btnrow' }, el('button', { type: 'button', id: 'st-spin', textContent: t('st_spin_start') }), el('button', { type: 'button', id: 'st-reset', textContent: t('st_reset') })),
-    el('p', { className: 'hint', textContent: t('st_hint') })
+    el('p', { id: 'st-hint', className: 'hint', textContent: t('st_hint') })
   )
   const anchor = $(ctx.insertBefore)
   anchor.parentNode.insertBefore(sec, anchor)
@@ -94,7 +95,9 @@ export function initStudioUi(ctx) {
     $('st-quality').value = s.quality
     $('st-speed').value = s.spinSpeed
     const on = studio.isActive()
-    for (const id of sec.querySelectorAll('input, select')) if (id.id !== 'st-preset' && id.id !== 'st-speed') id.disabled = !on && id.id !== ''
+    // floor, shadow and the look's details need a look; the background has its own row (swatches) and is always usable
+    for (const id of sec.querySelectorAll('input, select')) if (id.id !== 'st-preset' && id.id !== 'st-speed' && !id.closest('#st-bgmode-row')) id.disabled = !on && id.id !== ''
+    $('st-why').hidden = on
     $('st-preset').disabled = false
     $('st-speed').disabled = false
     $('st-spin').textContent = t(studio.spin.isRunning() ? 'st_spin_stop' : 'st_spin_start')

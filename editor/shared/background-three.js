@@ -1,16 +1,17 @@
 // Shared by 3D Model Viewer and STEP Viewer 3D (canonical copy: plugins/_shared; do not edit the copies in editor/shared).
 // The background of the view, one model for both: the mode is one of BG_MODES (prefs-core.js). It always works, in every look and shading.
-//   look: the studio look's own background when a look is on, else like Orca   orca: the theme of Orca   light, dark, white, gradient, transparent
+//   look: the studio look's own background when a look is on, else like Orca   orca: the theme of Orca   light, dark, white, gradient, transparent, custom (own colour)
 import * as THREE from 'three'
 import { gradientTexture } from './studio.js'
-import { bgIsDark } from './prefs-core.js'
+import { bgIsDark, BG_CUSTOM_DEFAULT, ORCA_BG } from './prefs-core.js'
 
-const LIGHT = 0xeceef1
-const DARK = 0x15171a
+const LIGHT = ORCA_BG.light
+const DARK = ORCA_BG.dark
 
 /** ctx: { scene, canvas, studio() -> the studio ui or null, themeDark() -> boolean }. */
 export function createBackground(ctx) {
   let mode = 'look'
+  let custom = BG_CUSTOM_DEFAULT
   let tex = null
   let texKey = ''
   const lookBg = () => (ctx.studio() && ctx.studio().isActive() ? ctx.studio().studio.background() : undefined) // undefined: no look decides
@@ -27,14 +28,18 @@ export function createBackground(ctx) {
     get mode() {
       return mode
     },
-    set(m) {
+    get color() {
+      return custom
+    },
+    set(m, color) {
       mode = m
+      if (color) custom = color
     },
     /** Whether the background shown is dark (the grid and the CAD edges are drawn to contrast with it). */
     dark() {
       const s = ctx.studio()
       const active = !!(s && s.isActive())
-      return bgIsDark(mode, { themeDark: ctx.themeDark(), studioDark: s ? s.studio.isDark() : null, lookTransparent: active && lookBg() === null })
+      return bgIsDark(mode, { themeDark: ctx.themeDark(), studioDark: s ? s.studio.isDark() : null, lookTransparent: active && lookBg() === null, customColor: custom })
     },
     /** Puts the background on the scene (a Color, a gradient texture or null) and the checker pattern behind a transparent canvas. */
     apply() {
@@ -46,6 +51,7 @@ export function createBackground(ctx) {
       else if (mode === 'light') bg = new THREE.Color(LIGHT)
       else if (mode === 'dark') bg = new THREE.Color(DARK)
       else if (mode === 'white') bg = new THREE.Color(0xffffff)
+      else if (mode === 'custom') bg = new THREE.Color(custom)
       else if (mode === 'gradient') bg = grad('#eceef1', '#8e949c')
       else bg = null
       ctx.scene.background = bg

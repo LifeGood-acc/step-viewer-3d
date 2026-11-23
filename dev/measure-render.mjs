@@ -79,6 +79,9 @@ const median = (a) => [...a].sort((x, y) => x - y)[a.length >> 1]
 const metrics = {}
 const pngOf = () => ev(`(async () => { const d = ${frame}; const cv = new OffscreenCanvas(d.width, d.height); cv.getContext('2d').putImageData(d, 0, 0); const b = await cv.convertToBlob({ type: 'image/png' }); const u = new Uint8Array(await b.arrayBuffer()); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s) })()`)
 const bench = (n) => ev(`(() => { const { renderer, scene, camera } = window.__h; const gl = renderer.getContext(); const px = new Uint8Array(4); for (let i = 0; i < 30; i++) renderer.render(scene, camera); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); const t0 = performance.now(); for (let i = 0; i < ${n}; i++) { camera.position.x += 0.0001; renderer.render(scene, camera) } gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); return (performance.now() - t0) / ${n} })()`)
+// the cost of the cube and the numbers of the view (UX v3, E4) in the frame as the page really draws it: render + viewFrame (cube, scale bar, zoom, status bar), the camera turning a little each frame
+// (so the cube is painted every time, the worst case), with the cube and the status bar on and with the cube off (its canvas is not painted then)
+const benchView = (n, cubeOn) => ev(`(() => { const { renderer, scene, camera, chrome } = window.__h; const gl = renderer.getContext(); const px = new Uint8Array(4); chrome.view.cube.setHidden(!${cubeOn}); for (let i = 0; i < 20; i++) { renderer.render(scene, camera); window.__h.viewFrame() } gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); const t0 = performance.now(); const p0 = chrome.view.cube.paintCount(); const c = Math.cos(0.01), s = Math.sin(0.01); for (let i = 0; i < ${n}; i++) { const x = camera.position.x, z = camera.position.z; camera.position.x = x * c - z * s; camera.position.z = x * s + z * c; camera.lookAt(0, 0, 0); camera.updateMatrixWorld(); renderer.render(scene, camera); window.__h.viewFrame() } window.__paints = chrome.view.cube.paintCount() - p0; gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); const ms = (performance.now() - t0) / ${n}; chrome.view.cube.setHidden(false); return { ms, paints: window.__paints } })()`)
 const loadMs = () => ev(`(() => { const dt = [...document.querySelectorAll('#stats dt, #stats-more dt')].map((e) => e.textContent); const dd = [...document.querySelectorAll('#stats dd, #stats-more dd')].map((e) => e.textContent); const i = dt.findIndex((x) => /load time|ladezeit/i.test(x)); return i < 0 ? null : parseFloat(dd[i]) })()`)
 try {
   let tries = 0
@@ -106,6 +109,20 @@ try {
     await sleep(300)
     const heap = await ev(`performance.memory ? performance.memory.usedJSHeapSize : null`)
     const frameMs = await bench(60)
+    if (name === 'parts.glb' || isStep) {
+      const on = []
+      const off = []
+      for (let r = 0; r < 5; r++) { // alternate, so that a slow moment hits both
+        const a = await benchView(60, false)
+        const b = await benchView(60, true)
+        off.push(a.ms)
+        on.push(b.ms)
+        if (r === 0) console.log(`  the cube was painted ${b.paints} of 60 frames with it on and ${a.paints} with it off`)
+      }
+      metrics[name + ' (view)'] = { frameWithCubeMs: Number(median(on).toFixed(2)), frameWithoutCubeMs: Number(median(off).toFixed(2)), cubeCostMs: Number((median(on) - median(off)).toFixed(2)), renderOnlyMs: Number(frameMs.toFixed(2)) }
+      console.log(name + ' (view)', JSON.stringify(metrics[name + ' (view)']))
+      check(metrics[name + ' (view)'].cubeCostMs <= 1, `the cube and the numbers of the view cost ${metrics[name + ' (view)'].cubeCostMs} ms of JavaScript per frame (limit 1 ms; the GPU work of compositing the small canvas is not measured here)`)
+    }
     metrics[name] = { loadMs: median(loads.filter((v) => v !== null)), frameMs: Number(frameMs.toFixed(2)), heapMB: heap ? Number((heap / 1048576).toFixed(1)) : null }
     writeFileSync(join(outDir, `${name}.png`), Buffer.from(await pngOf(), 'base64'))
     if (name === 'parts.glb' || isStep) {
